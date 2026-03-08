@@ -1,7 +1,6 @@
 {
     "agents": [
-        "codex",
-        "claude_code"
+        "copilot"
     ],
     "guidelines": true,
     "herd_mcp": false,
@@ -10,6 +9,8 @@
     "sail": false,
     "skills": [
         "wayfinder-development",
-        "pest-testing"
+        "pest-testing",
+        "inertia-vue-development",
+        "tailwindcss-development"
     ]
 }

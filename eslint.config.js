@@ -47,6 +47,7 @@ export default defineConfigWithVueTs(
     },
     {
         ignores: [
+            '.agents/**',
             'vendor',
             'node_modules',
             'public',
