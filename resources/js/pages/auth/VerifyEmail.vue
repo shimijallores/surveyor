@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { watch } from 'vue';
+import { toast } from 'vue-sonner';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -7,9 +9,24 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 import { logout } from '@/routes';
 import { send } from '@/routes/verification';
 
-defineProps<{
+const props = defineProps<{
     status?: string;
 }>();
+
+watch(
+    () => props.status,
+    (status) => {
+        if (status !== 'verification-link-sent') {
+            return;
+        }
+
+        toast.success('Verification link sent', {
+            description:
+                'Check your inbox for the latest email verification link.',
+        });
+    },
+    { immediate: true },
+);
 </script>
 
 <template>
@@ -18,14 +35,6 @@ defineProps<{
         description="Please verify your email address by clicking on the link we just emailed to you."
     >
         <Head title="Email verification" />
-
-        <div
-            v-if="status === 'verification-link-sent'"
-            class="mb-4 text-center text-sm font-medium text-green-600"
-        >
-            A new verification link has been sent to the email address you
-            provided during registration.
-        </div>
 
         <Form
             v-bind="send.form()"

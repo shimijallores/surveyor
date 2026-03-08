@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import {
     ArrowLeft,
     Copy,
@@ -9,6 +9,7 @@ import {
     Trash2,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import {
     close as closeSurvey,
     destroy as destroySurvey,
@@ -48,12 +49,8 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const page = usePage();
 const isDeleteDialogOpen = ref(false);
 const isDeleting = ref(false);
-const flashStatus = computed(
-    () => page.props.flash?.status as string | null | undefined,
-);
 
 const shareUrl = computed(() => {
     if (!props.survey.share_path) {
@@ -73,6 +70,9 @@ const copyLink = async (): Promise<void> => {
     }
 
     await navigator.clipboard.writeText(shareUrl.value);
+    toast.success('Share link copied', {
+        description: 'The private survey link is ready to share.',
+    });
 };
 
 const publish = (): void => {
@@ -136,13 +136,6 @@ const destroy = (): void => {
                                 response signals in one clean readout
                             </p>
                         </div>
-
-                        <p
-                            v-if="flashStatus"
-                            class="max-w-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
-                        >
-                            {{ flashStatus }}
-                        </p>
                     </div>
 
                     <Card class="border-border bg-background">

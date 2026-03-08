@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
 import { create } from '@/actions/App/Http/Controllers/Survey/SurveyController';
 import SurveyCard from '@/components/surveys/SurveyCard.vue';
 import { Button } from '@/components/ui/button';
@@ -20,11 +19,6 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/surveys',
     },
 ];
-
-const page = usePage();
-const flashStatus = computed(
-    () => page.props.flash?.status as string | null | undefined,
-);
 </script>
 
 <template>
@@ -55,13 +49,6 @@ const flashStatus = computed(
                         </Button>
                     </div>
                 </div>
-
-                <p
-                    v-if="flashStatus"
-                    class="max-w-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
-                >
-                    {{ flashStatus }}
-                </p>
 
                 <div
                     v-if="surveys.length"

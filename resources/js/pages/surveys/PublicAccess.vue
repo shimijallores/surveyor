@@ -134,13 +134,6 @@ const submit = (): void => {
                                 </p>
                             </div>
 
-                            <p
-                                v-if="status === 'response-submitted'"
-                                class="border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
-                            >
-                                Your response has been submitted.
-                            </p>
-
                             <div class="grid gap-2">
                                 <Label for="access_code">Access code</Label>
                                 <Input

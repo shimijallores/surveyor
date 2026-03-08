@@ -1,8 +1,11 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
-import { createApp, h } from 'vue';
+import { createApp, Fragment, h } from 'vue';
 import '../css/app.css';
+import 'vue-sonner/style.css';
+import AppFlashToasts from '@/components/AppFlashToasts.vue';
+import { Toaster } from '@/components/ui/sonner';
 import { initializeTheme } from '@/composables/useAppearance';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Surveyor';
@@ -15,7 +18,10 @@ createInertiaApp({
             import.meta.glob<DefineComponent>('./pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
+        createApp({
+            render: () =>
+                h(Fragment, [h(App, props), h(AppFlashToasts), h(Toaster)]),
+        })
             .use(plugin)
             .mount(el);
     },

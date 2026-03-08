@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import {
     ArrowLeft,
     ChevronDown,
@@ -10,6 +10,7 @@ import {
     Trash2,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { toast } from 'vue-sonner';
 import {
     create as createSurvey,
     edit as editSurvey,
@@ -68,11 +69,6 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     },
 ]);
 
-const page = usePage();
-const flashStatus = computed(
-    () => page.props.flash?.status as string | null | undefined,
-);
-
 const shareUrl = computed(() => {
     if (!props.survey.share_path) {
         return '';
@@ -95,6 +91,9 @@ const copyShareUrl = async (): Promise<void> => {
     }
 
     await navigator.clipboard.writeText(shareUrl.value);
+    toast.success('Share link copied', {
+        description: 'The private survey link is ready to paste anywhere.',
+    });
 };
 
 const form = useForm<SurveyBuilderForm>(
@@ -336,12 +335,6 @@ const submit = (): void => {
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3">
-                        <p
-                            v-if="flashStatus"
-                            class="border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
-                        >
-                            {{ flashStatus }}
-                        </p>
                         <Button
                             type="button"
                             class="px-5"
