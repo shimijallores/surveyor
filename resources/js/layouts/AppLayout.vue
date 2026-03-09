@@ -96,7 +96,7 @@ const isActive = (href: string | { url: string }): boolean => {
                                 Surveyor
                             </p>
                             <p class="brand-note truncate">
-                                built for clean answers
+                                survey builder for dummies
                             </p>
                         </div>
                     </Link>
