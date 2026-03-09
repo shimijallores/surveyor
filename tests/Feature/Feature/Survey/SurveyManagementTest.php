@@ -122,6 +122,7 @@ test('authenticated users can create a survey', function () {
     expect($survey->title)->toBe('Quarterly product feedback');
     expect($survey->status)->toBe(SurveyStatus::Draft);
     expect(Hash::check('launch-2026', $survey->access_code_hash))->toBeTrue();
+    expect($survey->access_code_ciphertext)->toBe('launch-2026');
     expect($survey->questions()->count())->toBe(2);
 });
 
@@ -225,6 +226,7 @@ test('survey owners can update publish and close a survey', function () {
 
     expect($survey->title)->toBe('Updated customer pulse');
     expect(Hash::check('rotated-code', $survey->access_code_hash))->toBeTrue();
+    expect($survey->access_code_ciphertext)->toBe('rotated-code');
     expect($survey->status)->toBe(SurveyStatus::Closed);
     expect($survey->published_at)->not->toBeNull();
     expect($survey->closed_at)->not->toBeNull();
@@ -262,6 +264,7 @@ test('survey owners receive plain analytics props', function () {
                 ->component('surveys/Analytics')
                 ->where('survey.title', 'Analytics payload')
                 ->where('survey.status', SurveyStatus::Draft->value)
+                ->where('survey.access_code', 'survey123')
                 ->where('survey.share_path', null)
                 ->where('analytics.summary.response_count', 0)
                 ->where('analytics.summary.question_count', 0)

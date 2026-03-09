@@ -38,6 +38,7 @@ export type SurveyBuilder = {
     public_id: string | null;
     title: string;
     description: string | null;
+    access_code: string | null;
     status: SurveyStatus;
     published_at: string | null;
     closed_at: string | null;

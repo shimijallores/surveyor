@@ -45,6 +45,7 @@ class ExampleSurveySeeder extends Seeder
             'title' => 'Philippines Presidential Pulse 2028',
             'description' => 'A fictional nationwide pulse survey exploring voter priorities, regional concerns, and candidate preference ahead of a mock presidential race.',
             'access_code_hash' => Hash::make('halalan-2028'),
+            'access_code_ciphertext' => 'halalan-2028',
             'status' => SurveyStatus::Published,
             'published_at' => now()->subDays(10),
             'last_response_at' => now()->subHours(4),
@@ -153,6 +154,7 @@ class ExampleSurveySeeder extends Seeder
             'title' => 'Philippine Food Research Study 2026',
             'description' => 'A sample research survey about Filipino dishes, ingredient access, and priorities for documenting regional food traditions.',
             'access_code_hash' => Hash::make('pagkain-2026'),
+            'access_code_ciphertext' => 'pagkain-2026',
             'status' => SurveyStatus::Published,
             'published_at' => now()->subDays(6),
             'last_response_at' => now()->subHours(2),
@@ -335,7 +337,7 @@ class ExampleSurveySeeder extends Seeder
                         'option_ids' => $question->options
                             ->whereIn('label', $selectedLabels)
                             ->pluck('id')
-                            ->map(fn($id): int => (int) $id)
+                            ->map(fn ($id): int => (int) $id)
                             ->values()
                             ->all(),
                     ];
@@ -346,7 +348,7 @@ class ExampleSurveySeeder extends Seeder
                 case SurveyQuestionType::Ranking:
                     $payload['json_value'] = [
                         'ranked_option_ids' => collect($value)
-                            ->map(fn(string $label): int => (int) $question->options->firstWhere('label', $label)?->id)
+                            ->map(fn (string $label): int => (int) $question->options->firstWhere('label', $label)?->id)
                             ->filter()
                             ->values()
                             ->all(),

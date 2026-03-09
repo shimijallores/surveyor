@@ -64,6 +64,7 @@ class SurveyController extends Controller
                 'public_id' => null,
                 'title' => '',
                 'description' => '',
+                'access_code' => null,
                 'status' => SurveyStatus::Draft->value,
                 'published_at' => null,
                 'closed_at' => null,
@@ -83,6 +84,7 @@ class SurveyController extends Controller
                 'title' => $request->validated('title'),
                 'description' => $request->validated('description'),
                 'access_code_hash' => Hash::make($request->validated('access_code')),
+                'access_code_ciphertext' => $request->validated('access_code'),
                 'status' => SurveyStatus::Draft,
             ]);
 
@@ -135,6 +137,7 @@ class SurveyController extends Controller
 
             if (filled($request->validated('access_code'))) {
                 $attributes['access_code_hash'] = Hash::make($request->validated('access_code'));
+                $attributes['access_code_ciphertext'] = $request->validated('access_code');
             }
 
             $survey->update($attributes);

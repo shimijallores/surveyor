@@ -26,6 +26,7 @@ class SurveyFactory extends Factory
             'title' => fake()->sentence(4),
             'description' => fake()->sentence(10),
             'access_code_hash' => Hash::make('survey123'),
+            'access_code_ciphertext' => 'survey123',
             'status' => SurveyStatus::Draft,
             'published_at' => null,
             'closed_at' => null,

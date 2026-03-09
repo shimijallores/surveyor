@@ -50,15 +50,16 @@ const cssColor = (name: string, fallback: string): string => {
 };
 
 const palette = computed(() => [
-    cssColor('--chart-2', '#2368c4'),
-    cssColor('--chart-4', '#e2af2f'),
-    cssColor('--chart-5', '#3d8f66'),
-    cssColor('--chart-1', '#e25f44'),
+    cssColor('--foreground', '#2f3640'),
+    cssColor('--muted-foreground', '#68707a'),
+    cssColor('--border', '#b8b0a8'),
+    '#9a938b',
 ]);
 
 const textColor = computed(() => cssColor('--foreground', '#1f2937'));
 const gridColor = computed(() => cssColor('--border', '#d6d3d1'));
 const cardColor = computed(() => cssColor('--card', '#faf7f2'));
+const mutedColor = computed(() => cssColor('--muted', '#ebe5dd'));
 
 const normalizedSegments = computed(() =>
     props.segments.map((segment, index) => ({
@@ -100,8 +101,8 @@ const chartOptions = computed<ChartOptions<'doughnut'>>(() => ({
         },
         datalabels: {
             color: textColor.value,
-            backgroundColor: `${cardColor.value}F2`,
-            borderColor: `${gridColor.value}AA`,
+            backgroundColor: cardColor.value,
+            borderColor: mutedColor.value,
             borderWidth: 1,
             borderRadius: 999,
             padding: {

@@ -23,6 +23,7 @@ class Survey extends Model
         'title',
         'description',
         'access_code_hash',
+        'access_code_ciphertext',
         'status',
         'published_at',
         'closed_at',
@@ -45,6 +46,7 @@ class Survey extends Model
     {
         return [
             'status' => SurveyStatus::class,
+            'access_code_ciphertext' => 'encrypted',
             'published_at' => 'immutable_datetime',
             'closed_at' => 'immutable_datetime',
             'last_response_at' => 'immutable_datetime',

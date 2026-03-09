@@ -4,10 +4,12 @@ import {
     ArrowLeftRight,
     CheckCircle2,
     CircleDot,
+    GripVertical,
     ListOrdered,
     MessageSquareText,
     Scale,
 } from 'lucide-vue-next';
+import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import SurveyBackdrop from '@/components/surveys/SurveyBackdrop.vue';
 import SurveyStatusBadge from '@/components/surveys/SurveyStatusBadge.vue';
@@ -59,6 +61,11 @@ const form = useForm<{ answers: SurveyAnswers }>({
     answers: buildAnswers(props.survey),
 });
 
+const draggingRank = ref<{
+    questionId: number | null;
+    index: number;
+} | null>(null);
+
 const answerKey = (question: SurveyQuestion): string => String(question.id);
 
 const toggleOption = (
@@ -101,6 +108,40 @@ const moveRank = (
     const [value] = values.splice(index, 1);
     values.splice(target, 0, value);
     form.answers[key] = values;
+};
+
+const startRankDrag = (question: SurveyQuestion, index: number): void => {
+    draggingRank.value = {
+        questionId: question.id,
+        index,
+    };
+};
+
+const endRankDrag = (): void => {
+    draggingRank.value = null;
+};
+
+const dropRank = (question: SurveyQuestion, targetIndex: number): void => {
+    if (
+        !draggingRank.value ||
+        draggingRank.value.questionId !== question.id ||
+        draggingRank.value.index === targetIndex
+    ) {
+        return;
+    }
+
+    const key = answerKey(question);
+    const values = Array.isArray(form.answers[key])
+        ? [...(form.answers[key] as number[])]
+        : [];
+    const [value] = values.splice(draggingRank.value.index, 1);
+
+    values.splice(targetIndex, 0, value);
+    form.answers[key] = values;
+    draggingRank.value = {
+        questionId: question.id,
+        index: targetIndex,
+    };
 };
 
 const rankingLabel = (question: SurveyQuestion, optionId: number): string => {
@@ -429,43 +470,51 @@ const submit = (): void => {
                                 class="flex items-center gap-2 text-sm text-muted-foreground"
                             >
                                 <ArrowLeftRight class="size-4" />
-                                Use the controls to move each option into your
-                                preferred order.
+                                Drag and drop each option into your preferred
+                                order.
                             </div>
                             <div
                                 v-for="(optionId, index) in form.answers[
                                     answerKey(question)
                                 ] as number[]"
                                 :key="`${question.id}-${optionId}`"
-                                class="flex items-center justify-between gap-3 border border-border px-4 py-4"
+                                draggable="true"
+                                class="flex cursor-grab items-center justify-between gap-3 border border-border px-4 py-4 transition hover:border-foreground active:cursor-grabbing"
+                                :class="
+                                    draggingRank?.questionId === question.id &&
+                                    draggingRank?.index === index
+                                        ? 'border-foreground bg-muted/70 opacity-70'
+                                        : 'border-border/70 bg-background'
+                                "
+                                @dragstart="startRankDrag(question, index)"
+                                @dragend="endRankDrag"
+                                @dragover.prevent
+                                @drop.prevent="dropRank(question, index)"
                             >
-                                <div>
-                                    <p
-                                        class="text-xs tracking-[0.2em] text-muted-foreground uppercase"
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex size-10 items-center justify-center border border-border bg-card text-muted-foreground"
                                     >
-                                        Rank {{ index + 1 }}
-                                    </p>
-                                    <p class="mt-1 font-medium">
-                                        {{ rankingLabel(question, optionId) }}
-                                    </p>
+                                        <GripVertical class="size-4" />
+                                    </div>
+
+                                    <div>
+                                        <p
+                                            class="text-xs tracking-[0.2em] text-muted-foreground uppercase"
+                                        >
+                                            Rank {{ index + 1 }}
+                                        </p>
+                                        <p class="mt-1 font-medium">
+                                            {{
+                                                rankingLabel(question, optionId)
+                                            }}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="flex gap-2">
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        @click="moveRank(question, index, -1)"
-                                    >
-                                        Up
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        @click="moveRank(question, index, 1)"
-                                    >
-                                        Down
-                                    </Button>
+                                <div
+                                    class="text-right text-xs tracking-[0.16em] text-muted-foreground uppercase"
+                                >
+                                    Drag
                                 </div>
                             </div>
                         </div>

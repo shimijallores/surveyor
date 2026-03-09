@@ -3,6 +3,8 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import {
     ArrowLeft,
     Copy,
+    Eye,
+    Pencil,
     LockKeyhole,
     PauseCircle,
     PieChart,
@@ -55,6 +57,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const isDeleteDialogOpen = ref(false);
 const isDeleting = ref(false);
+const isAccessCodeVisible = ref(false);
 
 const shareUrl = computed(() => {
     if (!props.survey.share_path) {
@@ -93,6 +96,10 @@ const questionResponseSegments = computed(
     () => props.analytics.summary.question_response_segments,
 );
 
+const visibleAccessCode = computed(() =>
+    isAccessCodeVisible.value ? props.survey.access_code : null,
+);
+
 const demographicQuestions = computed(() =>
     props.analytics.questions.filter((question) => question.demographic_key),
 );
@@ -110,6 +117,14 @@ const copyLink = async (): Promise<void> => {
     toast.success('Share link copied', {
         description: 'The private survey link is ready to share.',
     });
+};
+
+const toggleAccessCode = (): void => {
+    if (!props.survey.access_code) {
+        return;
+    }
+
+    isAccessCodeVisible.value = !isAccessCodeVisible.value;
 };
 
 const publish = (): void => {
@@ -191,6 +206,43 @@ const destroy = (): void => {
                                 </p>
                             </div>
 
+                            <div class="border border-border bg-card p-4">
+                                <div
+                                    class="flex items-center justify-between gap-3"
+                                >
+                                    <div>
+                                        <p
+                                            class="text-xs tracking-[0.2em] text-muted-foreground uppercase"
+                                        >
+                                            Access code
+                                        </p>
+                                        <p
+                                            class="mt-2 text-sm leading-6 break-all"
+                                        >
+                                            {{
+                                                visibleAccessCode ??
+                                                'Hidden until you choose to reveal it.'
+                                            }}
+                                        </p>
+                                    </div>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        :disabled="!survey.access_code"
+                                        @click="toggleAccessCode"
+                                    >
+                                        <Eye class="mr-2 size-4" />
+                                        {{
+                                            isAccessCodeVisible
+                                                ? 'Hide code'
+                                                : 'Show code'
+                                        }}
+                                    </Button>
+                                </div>
+                            </div>
+
                             <div class="grid grid-cols-2 gap-3">
                                 <Button
                                     type="button"
@@ -201,14 +253,16 @@ const destroy = (): void => {
                                     <Copy class="mr-2 size-4" />
                                     Copy link
                                 </Button>
-                                <Button as-child variant="outline" class="">
+                                <Button as-child variant="outline">
                                     <Link
                                         :href="
                                             editSurvey({
                                                 survey: survey.id ?? 0,
                                             })
                                         "
-                                        >Edit form</Link
+                                        class="inline-flex items-center"
+                                        ><Pencil class="mr-2 size-4" />Edit
+                                        form</Link
                                     >
                                 </Button>
                                 <Button
@@ -327,11 +381,40 @@ const destroy = (): void => {
                             </h2>
                         </div>
 
-                        <SurveyBarChart
-                            :segments="questionResponseSegments"
-                            metric-label="total submissions"
-                            empty-label="Each question will show its response volume here once submissions arrive."
-                        />
+                        <div
+                            v-if="questionResponseSegments.length"
+                            class="grid gap-3"
+                        >
+                            <div
+                                v-for="segment in questionResponseSegments"
+                                :key="segment.label"
+                                class="flex items-center justify-between gap-3 rounded-[1rem] border border-border bg-background px-4 py-3"
+                            >
+                                <div class="min-w-0">
+                                    <p
+                                        class="truncate text-sm font-medium text-foreground"
+                                    >
+                                        {{ segment.label }}
+                                    </p>
+                                    <p class="text-xs text-muted-foreground">
+                                        Total submissions received
+                                    </p>
+                                </div>
+                                <span
+                                    class="shrink-0 text-sm font-medium text-foreground"
+                                >
+                                    {{ segment.count ?? segment.score ?? 0 }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div
+                            v-else
+                            class="rounded-[1rem] border border-dashed border-border bg-background px-4 py-6 text-sm text-muted-foreground"
+                        >
+                            Each question will show its response volume here
+                            once submissions arrive.
+                        </div>
                     </CardContent>
                 </Card>
             </section>

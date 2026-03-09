@@ -23,6 +23,7 @@ class SurveyBuilderResource extends JsonResource
             'public_id' => $survey->public_id,
             'title' => $survey->title,
             'description' => $survey->description,
+            'access_code' => $survey->access_code_ciphertext,
             'status' => $survey->status->value,
             'published_at' => $survey->published_at?->toIso8601String(),
             'closed_at' => $survey->closed_at?->toIso8601String(),
@@ -32,7 +33,7 @@ class SurveyBuilderResource extends JsonResource
             'questions' => $survey->questions
                 ->sortBy('position')
                 ->values()
-                ->map(fn($question): array => [
+                ->map(fn ($question): array => [
                     'id' => $question->id,
                     'type' => $question->type->value,
                     'title' => $question->title,
@@ -43,7 +44,7 @@ class SurveyBuilderResource extends JsonResource
                     'options' => $question->options
                         ->sortBy('position')
                         ->values()
-                        ->map(fn($option): array => [
+                        ->map(fn ($option): array => [
                             'id' => $option->id,
                             'label' => $option->label,
                             'position' => $option->position,
