@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
-    BarChart3,
     MessageSquareQuote,
+    PieChart,
     Scale,
     SlidersHorizontal,
 } from 'lucide-vue-next';
@@ -139,12 +139,12 @@ const demographicLabel = (question: SurveyAnalyticsQuestion): string | null => {
 
             <div v-if="question.segments?.length" class="space-y-3">
                 <div class="flex items-center gap-2 text-sm font-medium">
-                    <BarChart3 class="size-4 text-muted-foreground" />
+                    <PieChart class="size-4 text-muted-foreground" />
                     <span>
                         {{
                             question.type === 'open_ended'
                                 ? 'Most repeated responses'
-                                : 'Visual breakdown'
+                                : 'Pie breakdown'
                         }}
                     </span>
                 </div>

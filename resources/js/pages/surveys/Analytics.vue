@@ -2,7 +2,6 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
     ArrowLeft,
-    BarChart3,
     Copy,
     LockKeyhole,
     PauseCircle,
@@ -322,7 +321,7 @@ const destroy = (): void => {
                 <Card class="border-border bg-card">
                     <CardContent class="space-y-5 p-5">
                         <div class="flex items-center gap-2">
-                            <BarChart3 class="size-4 text-muted-foreground" />
+                            <PieChart class="size-4 text-muted-foreground" />
                             <h2 class="text-lg font-semibold tracking-tight">
                                 Response volume by question
                             </h2>
