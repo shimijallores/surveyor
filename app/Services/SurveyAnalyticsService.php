@@ -35,9 +35,51 @@ class SurveyAnalyticsService
                 'completion_rate' => $responses->isEmpty()
                     ? 0
                     : (int) round(($completedResponses->count() / $responses->count()) * 100),
+                'question_response_segments' => $questions
+                    ->map(fn (array $question): array => [
+                        'label' => $question['title'],
+                        'count' => $question['response_count'],
+                        'percentage' => $responses->isEmpty()
+                            ? 0
+                            : (int) round(($question['response_count'] / $responses->count()) * 100),
+                    ])
+                    ->all(),
             ],
             'questions' => $questions->all(),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function baseQuestionAnalytics(SurveyQuestion $question): array
+    {
+        return [
+            'question_id' => $question->id,
+            'type' => $question->type->value,
+            'title' => $question->title,
+            'description' => $question->description,
+            'response_count' => $question->answers->count(),
+            'demographic_key' => $question->settings['demographic_key'] ?? null,
+        ];
+    }
+
+    /**
+     * @param  array<string, int>  $segments
+     * @return array<int, array<string, int|string>>
+     */
+    protected function countedSegments(array $segments): array
+    {
+        $total = array_sum($segments);
+
+        return collect($segments)
+            ->map(fn (int $count, string $label): array => [
+                'label' => $label,
+                'count' => $count,
+                'percentage' => $total === 0 ? 0 : (int) round(($count / $total) * 100),
+            ])
+            ->values()
+            ->all();
     }
 
     /**
@@ -62,15 +104,30 @@ class SurveyAnalyticsService
         $answers = $question->answers()
             ->whereNotNull('text_value')
             ->pluck('text_value')
+            ->map(static fn (string $value): string => trim($value))
             ->filter()
             ->values();
 
+        $segments = $answers
+            ->groupBy(static fn (string $value): string => mb_strtolower($value))
+            ->map(fn ($group): array => [
+                'label' => $group->first(),
+                'count' => $group->count(),
+            ])
+            ->sortByDesc('count')
+            ->values()
+            ->take(6)
+            ->map(fn (array $segment): array => [
+                ...$segment,
+                'percentage' => $answers->isEmpty()
+                    ? 0
+                    : (int) round(($segment['count'] / $answers->count()) * 100),
+            ]);
+
         return [
-            'question_id' => $question->id,
-            'type' => $question->type->value,
-            'title' => $question->title,
-            'description' => $question->description,
+            ...$this->baseQuestionAnalytics($question),
             'responses' => $answers->all(),
+            'segments' => $segments->all(),
         ];
     }
 
@@ -82,14 +139,11 @@ class SurveyAnalyticsService
         $answers = $question->answers;
 
         return [
-            'question_id' => $question->id,
-            'type' => $question->type->value,
-            'title' => $question->title,
-            'description' => $question->description,
-            'segments' => [
-                ['label' => 'Yes', 'count' => $answers->where('boolean_value', true)->count()],
-                ['label' => 'No', 'count' => $answers->where('boolean_value', false)->count()],
-            ],
+            ...$this->baseQuestionAnalytics($question),
+            'segments' => $this->countedSegments([
+                'Yes' => $answers->where('boolean_value', true)->count(),
+                'No' => $answers->where('boolean_value', false)->count(),
+            ]),
         ];
     }
 
@@ -110,18 +164,12 @@ class SurveyAnalyticsService
                     })
                     ->count();
 
-                return [
-                    'label' => $option->label,
-                    'count' => $count,
-                ];
+                return [$option->label => $count];
             });
 
         return [
-            'question_id' => $question->id,
-            'type' => $question->type->value,
-            'title' => $question->title,
-            'description' => $question->description,
-            'segments' => $counts->all(),
+            ...$this->baseQuestionAnalytics($question),
+            'segments' => $this->countedSegments($counts->collapse()->all()),
         ];
     }
 
@@ -139,18 +187,14 @@ class SurveyAnalyticsService
         $max = (int) ($question->settings['max'] ?? 5);
 
         $segments = collect(range($min, $max))
-            ->map(fn (int $value): array => [
-                'label' => (string) $value,
-                'count' => $ratings->filter(fn (int $rating): bool => $rating === $value)->count(),
+            ->mapWithKeys(fn (int $value): array => [
+                (string) $value => $ratings->filter(fn (int $rating): bool => $rating === $value)->count(),
             ]);
 
         return [
-            'question_id' => $question->id,
-            'type' => $question->type->value,
-            'title' => $question->title,
-            'description' => $question->description,
+            ...$this->baseQuestionAnalytics($question),
             'average' => $ratings->isEmpty() ? null : round($ratings->avg(), 2),
-            'segments' => $segments->all(),
+            'segments' => $this->countedSegments($segments->all()),
             'scale' => [
                 'min' => $min,
                 'max' => $max,
@@ -188,10 +232,7 @@ class SurveyAnalyticsService
             });
 
         return [
-            'question_id' => $question->id,
-            'type' => $question->type->value,
-            'title' => $question->title,
-            'description' => $question->description,
+            ...$this->baseQuestionAnalytics($question),
             'segments' => $totals->all(),
         ];
     }

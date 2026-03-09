@@ -8,6 +8,7 @@ import {
     CopyPlus,
     Grip,
     Trash2,
+    Users,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { toast } from 'vue-sonner';
@@ -55,6 +56,54 @@ type Props = {
     survey: SurveyBuilder;
     questionTypes: SurveyQuestionTypeOption[];
 };
+
+const demographicPresetQuestions = (): SurveyQuestion[] => [
+    {
+        id: null,
+        type: 'open_ended',
+        title: 'Where do you currently live?',
+        description:
+            "Ask for the respondent's city, province, region, or country.",
+        is_required: false,
+        position: 0,
+        settings: {
+            demographic_key: 'location',
+            allow_multiple: false,
+            min: 1,
+            max: 5,
+            min_label: '',
+            max_label: '',
+        },
+        options: [],
+    },
+    {
+        id: null,
+        type: 'multiple_choice',
+        title: 'What is your age range?',
+        description:
+            'Use a standard set of age brackets for clearer reporting.',
+        is_required: false,
+        position: 1,
+        settings: {
+            demographic_key: 'age_range',
+            allow_multiple: false,
+            min: 1,
+            max: 5,
+            min_label: '',
+            max_label: '',
+        },
+        options: [
+            { id: null, label: 'Under 18', position: 0 },
+            { id: null, label: '18-24', position: 1 },
+            { id: null, label: '25-34', position: 2 },
+            { id: null, label: '35-44', position: 3 },
+            { id: null, label: '45-54', position: 4 },
+            { id: null, label: '55-64', position: 5 },
+            { id: null, label: '65+', position: 6 },
+            { id: null, label: 'Prefer not to say', position: 7 },
+        ],
+    },
+];
 
 const props = defineProps<Props>();
 
@@ -106,11 +155,13 @@ const form = useForm<SurveyBuilderForm>(
             ...question,
             description: question.description ?? '',
             settings: {
+                ...question.settings,
                 allow_multiple: question.settings.allow_multiple ?? false,
                 min: question.settings.min ?? 1,
                 max: question.settings.max ?? 5,
                 min_label: question.settings.min_label ?? '',
                 max_label: question.settings.max_label ?? '',
+                demographic_key: question.settings.demographic_key ?? null,
             },
         })),
     },
@@ -155,6 +206,35 @@ const syncPositions = (): void => {
 const addQuestion = (type: SurveyQuestionType): void => {
     form.questions.push(createQuestion(type));
     syncPositions();
+};
+
+const addDemographics = (): void => {
+    const existingKeys = new Set(
+        form.questions
+            .map((question) => question.settings.demographic_key)
+            .filter(Boolean),
+    );
+
+    const questionsToAdd = demographicPresetQuestions().filter(
+        (question) => !existingKeys.has(question.settings.demographic_key),
+    );
+
+    if (questionsToAdd.length === 0) {
+        toast.message('Demographic questions already added', {
+            description:
+                'Location and age range prompts are already part of this form.',
+        });
+
+        return;
+    }
+
+    form.questions.push(...questionsToAdd);
+    syncPositions();
+
+    toast.success('Demographics added', {
+        description:
+            'Location and age range questions were appended to the form.',
+    });
 };
 
 const updateQuestionType = (
@@ -448,6 +528,15 @@ const submit = (): void => {
                                             >Question
                                             {{ questionIndex + 1 }}</CardTitle
                                         >
+                                        <p
+                                            v-if="
+                                                question.settings
+                                                    .demographic_key
+                                            "
+                                            class="mt-1 text-[11px] tracking-[0.16em] text-muted-foreground uppercase"
+                                        >
+                                            demographic field
+                                        </p>
                                         <CardDescription>{{
                                             questionTypes.find(
                                                 (type) =>
@@ -769,14 +858,38 @@ const submit = (): void => {
                             class="border-dashed border-border bg-card shadow-none"
                         >
                             <CardContent class="space-y-4 p-6">
-                                <div>
-                                    <h3 class="text-lg font-semibold">
-                                        Add another question
-                                    </h3>
-                                    <p class="text-sm text-muted-foreground">
-                                        Choose a question type and it will be
-                                        appended to the end of the form.
-                                    </p>
+                                <div
+                                    class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+                                >
+                                    <div>
+                                        <h3 class="text-lg font-semibold">
+                                            Add another question
+                                        </h3>
+                                        <p
+                                            class="text-sm text-muted-foreground"
+                                        >
+                                            Choose a question type and it will
+                                            be appended to the end of the form.
+                                        </p>
+                                    </div>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        class="gap-2"
+                                        @click="addDemographics"
+                                    >
+                                        <Users class="size-4" />
+                                        Add demographics
+                                    </Button>
+                                </div>
+
+                                <div
+                                    class="rounded-[1rem] border border-border bg-background px-4 py-4 text-sm text-muted-foreground"
+                                >
+                                    Add the common demographic preset when you
+                                    want age and location captured
+                                    automatically.
                                 </div>
 
                                 <div

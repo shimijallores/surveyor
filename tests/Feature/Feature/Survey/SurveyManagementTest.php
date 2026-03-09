@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\SurveyQuestionType;
 use App\Enums\SurveyStatus;
 use App\Models\Survey;
 use App\Models\User;
@@ -124,6 +125,57 @@ test('authenticated users can create a survey', function () {
     expect($survey->questions()->count())->toBe(2);
 });
 
+test('survey creation preserves demographic question metadata', function () {
+    $user = User::factory()->create();
+
+    actingAs($user);
+
+    post(route('surveys.store'), surveyPayload([
+        'questions' => [
+            [
+                'type' => 'open_ended',
+                'title' => 'Where do you currently live?',
+                'description' => 'Share your city, region, or country.',
+                'is_required' => false,
+                'position' => 0,
+                'settings' => [
+                    'demographic_key' => 'location',
+                ],
+                'options' => [],
+            ],
+            [
+                'type' => 'multiple_choice',
+                'title' => 'What is your age range?',
+                'description' => null,
+                'is_required' => false,
+                'position' => 1,
+                'settings' => [
+                    'allow_multiple' => false,
+                    'demographic_key' => 'age_range',
+                ],
+                'options' => [
+                    ['label' => '18-24', 'position' => 0],
+                    ['label' => '25-34', 'position' => 1],
+                ],
+            ],
+        ],
+    ]));
+
+    $survey = Survey::query()->with('questions')->firstOrFail();
+    $locationQuestion = $survey->questions->firstWhere('title', 'Where do you currently live?');
+    $ageQuestion = $survey->questions->firstWhere('title', 'What is your age range?');
+
+    expect($locationQuestion)->not->toBeNull();
+    expect($locationQuestion?->settings)->toMatchArray([
+        'demographic_key' => 'location',
+    ]);
+    expect($ageQuestion)->not->toBeNull();
+    expect($ageQuestion?->settings)->toMatchArray([
+        'allow_multiple' => false,
+        'demographic_key' => 'age_range',
+    ]);
+});
+
 test('survey owners can update publish and close a survey', function () {
     $user = User::factory()->create();
 
@@ -213,7 +265,101 @@ test('survey owners receive plain analytics props', function () {
                 ->where('survey.share_path', null)
                 ->where('analytics.summary.response_count', 0)
                 ->where('analytics.summary.question_count', 0)
+                ->has('analytics.summary.question_response_segments', 0)
                 ->has('analytics.questions', 0),
+        );
+});
+
+test('survey analytics include chart data and demographic metadata', function () {
+    $owner = User::factory()->create();
+    $survey = Survey::factory()->for($owner)->create([
+        'title' => 'Community pulse',
+        'status' => SurveyStatus::Published,
+    ]);
+
+    $locationQuestion = $survey->questions()->create([
+        'type' => SurveyQuestionType::OpenEnded,
+        'title' => 'Where do you currently live?',
+        'description' => 'Share your city, region, or country.',
+        'is_required' => false,
+        'position' => 0,
+        'settings' => [
+            'demographic_key' => 'location',
+        ],
+    ]);
+
+    $ageQuestion = $survey->questions()->create([
+        'type' => SurveyQuestionType::MultipleChoice,
+        'title' => 'What is your age range?',
+        'description' => null,
+        'is_required' => false,
+        'position' => 1,
+        'settings' => [
+            'allow_multiple' => false,
+            'demographic_key' => 'age_range',
+        ],
+    ]);
+
+    $ageQuestion->options()->createMany([
+        ['label' => '18-24', 'position' => 0],
+        ['label' => '25-34', 'position' => 1],
+    ]);
+
+    $firstResponse = $survey->responses()->create([
+        'is_completed' => true,
+        'access_code_verified_at' => now(),
+        'submitted_at' => now(),
+    ]);
+
+    $secondResponse = $survey->responses()->create([
+        'is_completed' => true,
+        'access_code_verified_at' => now(),
+        'submitted_at' => now(),
+    ]);
+
+    $firstResponse->answers()->createMany([
+        [
+            'survey_question_id' => $locationQuestion->id,
+            'text_value' => 'Manila',
+        ],
+        [
+            'survey_question_id' => $ageQuestion->id,
+            'json_value' => ['option_ids' => [$ageQuestion->options[0]->id]],
+        ],
+    ]);
+
+    $secondResponse->answers()->createMany([
+        [
+            'survey_question_id' => $locationQuestion->id,
+            'text_value' => 'Manila',
+        ],
+        [
+            'survey_question_id' => $ageQuestion->id,
+            'json_value' => ['option_ids' => [$ageQuestion->options[1]->id]],
+        ],
+    ]);
+
+    actingAs($owner);
+
+    get(route('surveys.show', $survey))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->component('surveys/Analytics')
+                ->where('analytics.summary.response_count', 2)
+                ->where('analytics.summary.completed_count', 2)
+                ->where('analytics.summary.question_response_segments.0.label', 'Where do you currently live?')
+                ->where('analytics.summary.question_response_segments.0.count', 2)
+                ->where('analytics.questions.0.demographic_key', 'location')
+                ->where('analytics.questions.0.response_count', 2)
+                ->where('analytics.questions.0.segments.0.label', 'Manila')
+                ->where('analytics.questions.0.segments.0.count', 2)
+                ->where('analytics.questions.1.demographic_key', 'age_range')
+                ->where('analytics.questions.1.response_count', 2)
+                ->where('analytics.questions.1.segments.0.label', '18-24')
+                ->where('analytics.questions.1.segments.0.count', 1)
+                ->where('analytics.questions.1.segments.1.label', '25-34')
+                ->where('analytics.questions.1.segments.1.count', 1),
         );
 });
 

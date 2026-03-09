@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { MessageSquareQuote, Scale, SlidersHorizontal } from 'lucide-vue-next';
+import {
+    BarChart3,
+    MessageSquareQuote,
+    Scale,
+    SlidersHorizontal,
+} from 'lucide-vue-next';
+import SurveyBarChart from '@/components/surveys/SurveyBarChart.vue';
+import { Badge } from '@/components/ui/badge';
 import {
     Card,
     CardContent,
@@ -13,19 +20,6 @@ defineProps<{
     question: SurveyAnalyticsQuestion;
 }>();
 
-const maxSegmentValue = (question: SurveyAnalyticsQuestion): number => {
-    if (!question.segments || question.segments.length === 0) {
-        return 1;
-    }
-
-    return Math.max(
-        ...question.segments.map(
-            (segment) => segment.count ?? segment.score ?? 0,
-        ),
-        1,
-    );
-};
-
 const questionIcon = (type: SurveyAnalyticsQuestion['type']) => {
     switch (type) {
         case 'open_ended':
@@ -34,6 +28,20 @@ const questionIcon = (type: SurveyAnalyticsQuestion['type']) => {
             return Scale;
         default:
             return SlidersHorizontal;
+    }
+};
+
+const metricLabel = (question: SurveyAnalyticsQuestion): string =>
+    question.type === 'ranking' ? 'ranking score' : 'responses';
+
+const demographicLabel = (question: SurveyAnalyticsQuestion): string | null => {
+    switch (question.demographic_key) {
+        case 'location':
+            return 'Demographic: location';
+        case 'age_range':
+            return 'Demographic: age range';
+        default:
+            return null;
     }
 };
 </script>
@@ -55,62 +63,97 @@ const questionIcon = (type: SurveyAnalyticsQuestion['type']) => {
                         <CardTitle class="text-lg">{{
                             question.title
                         }}</CardTitle>
-                        <CardDescription>{{
-                            question.description || 'No extra prompt provided.'
-                        }}</CardDescription>
+                        <CardDescription>
+                            {{
+                                question.description ||
+                                'No extra prompt provided.'
+                            }}
+                        </CardDescription>
                     </div>
                 </div>
-                <span
-                    class="border border-border px-3 py-1 text-xs tracking-[0.22em] text-muted-foreground uppercase"
-                >
-                    {{ question.type.replace('_', ' ') }}
-                </span>
+
+                <div class="flex flex-wrap items-center justify-end gap-2">
+                    <Badge
+                        v-if="demographicLabel(question)"
+                        variant="outline"
+                        class="rounded-full"
+                    >
+                        {{ demographicLabel(question) }}
+                    </Badge>
+                    <span
+                        class="border border-border px-3 py-1 text-xs tracking-[0.22em] text-muted-foreground uppercase"
+                    >
+                        {{ question.type.replace('_', ' ') }}
+                    </span>
+                </div>
             </div>
         </CardHeader>
 
         <CardContent class="space-y-4">
-            <div
-                v-if="question.average !== undefined"
-                class="border border-border bg-background p-4"
-            >
-                <p
-                    class="text-xs tracking-[0.2em] text-muted-foreground uppercase"
+            <div class="grid gap-3 md:grid-cols-2">
+                <div class="border border-border bg-background p-4">
+                    <p
+                        class="text-xs tracking-[0.2em] text-muted-foreground uppercase"
+                    >
+                        Captured responses
+                    </p>
+                    <p class="mt-2 text-3xl font-semibold">
+                        {{ question.response_count }}
+                    </p>
+                </div>
+
+                <div
+                    v-if="question.average !== undefined"
+                    class="border border-border bg-background p-4"
                 >
-                    Average rating
-                </p>
-                <p class="mt-2 text-3xl font-semibold">
-                    {{ question.average ?? 'n/a' }}
-                </p>
-                <p
-                    v-if="question.scale"
-                    class="mt-2 text-sm text-muted-foreground"
+                    <p
+                        class="text-xs tracking-[0.2em] text-muted-foreground uppercase"
+                    >
+                        Average rating
+                    </p>
+                    <p class="mt-2 text-3xl font-semibold">
+                        {{ question.average ?? 'n/a' }}
+                    </p>
+                    <p
+                        v-if="question.scale"
+                        class="mt-2 text-sm text-muted-foreground"
+                    >
+                        {{ question.scale.min_label || question.scale.min }} to
+                        {{ question.scale.max_label || question.scale.max }}
+                    </p>
+                </div>
+
+                <div
+                    v-else
+                    class="flex items-end border border-border bg-background p-4"
                 >
-                    {{ question.scale.min_label || question.scale.min }} to
-                    {{ question.scale.max_label || question.scale.max }}
-                </p>
+                    <p class="text-sm text-muted-foreground">
+                        {{
+                            question.type === 'open_ended'
+                                ? 'Open-ended responses show a tally of repeated answers plus the raw response feed.'
+                                : 'This chart shows how responses distribute across the available choices.'
+                        }}
+                    </p>
+                </div>
             </div>
 
             <div v-if="question.segments?.length" class="space-y-3">
-                <div
-                    v-for="segment in question.segments"
-                    :key="segment.label"
-                    class="space-y-2"
-                >
-                    <div class="flex items-center justify-between text-sm">
-                        <span>{{ segment.label }}</span>
-                        <span class="font-medium">{{
-                            segment.count ?? segment.score ?? 0
-                        }}</span>
-                    </div>
-                    <div class="h-3 bg-muted">
-                        <div
-                            class="h-3 bg-[var(--color-chart-2)] transition-all duration-500"
-                            :style="{
-                                width: `${(((segment.count ?? segment.score ?? 0) / maxSegmentValue(question)) * 100).toFixed(2)}%`,
-                            }"
-                        />
-                    </div>
+                <div class="flex items-center gap-2 text-sm font-medium">
+                    <BarChart3 class="size-4 text-muted-foreground" />
+                    <span>
+                        {{
+                            question.type === 'open_ended'
+                                ? 'Most repeated responses'
+                                : 'Visual breakdown'
+                        }}
+                    </span>
                 </div>
+
+                <SurveyBarChart
+                    :segments="question.segments"
+                    :metric-label="metricLabel(question)"
+                    empty-label="Responses will appear here once participants start submitting answers."
+                />
             </div>
 
             <div

@@ -2,11 +2,14 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
     ArrowLeft,
+    BarChart3,
     Copy,
     LockKeyhole,
     PauseCircle,
+    PieChart,
     PlayCircle,
     Trash2,
+    Users,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
@@ -19,6 +22,8 @@ import {
 import Heading from '@/components/Heading.vue';
 import SurveyAnalyticsCard from '@/components/surveys/SurveyAnalyticsCard.vue';
 import SurveyBackdrop from '@/components/surveys/SurveyBackdrop.vue';
+import SurveyBarChart from '@/components/surveys/SurveyBarChart.vue';
+import SurveyDonutChart from '@/components/surveys/SurveyDonutChart.vue';
 import SurveyStatusBadge from '@/components/surveys/SurveyStatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -63,6 +68,39 @@ const shareUrl = computed(() => {
 
     return `${window.location.origin}${props.survey.share_path}`;
 });
+
+const completionSegments = computed(() => {
+    const unfinished = Math.max(
+        props.analytics.summary.response_count -
+            props.analytics.summary.completed_count,
+        0,
+    );
+
+    return [
+        {
+            label: 'Completed',
+            value: props.analytics.summary.completed_count,
+            color: 'var(--color-chart-2)',
+        },
+        {
+            label: 'Unfinished',
+            value: unfinished,
+            color: 'var(--color-chart-4)',
+        },
+    ];
+});
+
+const questionResponseSegments = computed(
+    () => props.analytics.summary.question_response_segments,
+);
+
+const demographicQuestions = computed(() =>
+    props.analytics.questions.filter((question) => question.demographic_key),
+);
+
+const nonDemographicQuestions = computed(() =>
+    props.analytics.questions.filter((question) => !question.demographic_key),
+);
 
 const copyLink = async (): Promise<void> => {
     if (!shareUrl.value) {
@@ -257,17 +295,88 @@ const destroy = (): void => {
                 </Card>
             </section>
 
-            <section class="space-y-4">
+            <section
+                class="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]"
+            >
+                <Card class="border-border bg-card">
+                    <CardContent class="space-y-5 p-5">
+                        <div class="flex items-center gap-2">
+                            <PieChart class="size-4 text-muted-foreground" />
+                            <h2 class="text-lg font-semibold tracking-tight">
+                                Response completion
+                            </h2>
+                        </div>
+
+                        <SurveyDonutChart
+                            :segments="completionSegments"
+                            :center-value="`${analytics.summary.completion_rate}%`"
+                            :center-label="
+                                analytics.summary.response_count === 0
+                                    ? 'No responses yet'
+                                    : 'Completion rate'
+                            "
+                        />
+                    </CardContent>
+                </Card>
+
+                <Card class="border-border bg-card">
+                    <CardContent class="space-y-5 p-5">
+                        <div class="flex items-center gap-2">
+                            <BarChart3 class="size-4 text-muted-foreground" />
+                            <h2 class="text-lg font-semibold tracking-tight">
+                                Response volume by question
+                            </h2>
+                        </div>
+
+                        <SurveyBarChart
+                            :segments="questionResponseSegments"
+                            metric-label="total submissions"
+                            empty-label="Each question will show its response volume here once submissions arrive."
+                        />
+                    </CardContent>
+                </Card>
+            </section>
+
+            <section v-if="demographicQuestions.length" class="space-y-4">
                 <div class="flex items-center gap-3">
-                    <LockKeyhole class="size-5 text-muted-foreground" />
-                    <h2 class="text-2xl font-semibold tracking-tight">
-                        Per-question analytics
-                    </h2>
+                    <Users class="size-5 text-muted-foreground" />
+                    <div>
+                        <h2 class="text-2xl font-semibold tracking-tight">
+                            Demographic questions
+                        </h2>
+                        <p class="text-sm text-muted-foreground">
+                            Location and age prompts are tagged so they remain
+                            easy to spot in the analytics stream.
+                        </p>
+                    </div>
                 </div>
 
                 <div class="grid gap-5">
                     <SurveyAnalyticsCard
-                        v-for="question in analytics.questions"
+                        v-for="question in demographicQuestions"
+                        :key="`demographic-${question.question_id}`"
+                        :question="question"
+                    />
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <LockKeyhole class="size-5 text-muted-foreground" />
+                    <div>
+                        <h2 class="text-2xl font-semibold tracking-tight">
+                            Per-question analytics
+                        </h2>
+                        <p class="text-sm text-muted-foreground">
+                            Every prompt now includes a chart or graph where the
+                            response shape supports it.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid gap-5">
+                    <SurveyAnalyticsCard
+                        v-for="question in nonDemographicQuestions"
                         :key="question.question_id"
                         :question="question"
                     />

@@ -14,7 +14,7 @@ trait SurveyValidationRules
     protected function surveyRules(bool $accessCodeRequired = true): array
     {
         $questionTypes = array_map(
-            static fn (SurveyQuestionType $type): string => $type->value,
+            static fn(SurveyQuestionType $type): string => $type->value,
             SurveyQuestionType::cases(),
         );
 
@@ -34,6 +34,7 @@ trait SurveyValidationRules
             'questions.*.settings.min_label' => ['nullable', 'string', 'max:60'],
             'questions.*.settings.max_label' => ['nullable', 'string', 'max:60'],
             'questions.*.settings.allow_multiple' => ['nullable', 'boolean'],
+            'questions.*.settings.demographic_key' => ['nullable', 'string', Rule::in(['location', 'age_range'])],
             'questions.*.options' => ['nullable', 'array', 'max:20'],
             'questions.*.options.*.label' => ['required_with:questions.*.options', 'string', 'max:120'],
             'questions.*.options.*.position' => ['required_with:questions.*.options', 'integer', 'min:0'],

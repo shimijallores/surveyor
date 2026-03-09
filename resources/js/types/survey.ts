@@ -19,6 +19,7 @@ export type SurveyQuestionSettings = {
     max?: number;
     min_label?: string | null;
     max_label?: string | null;
+    demographic_key?: 'location' | 'age_range' | null;
 };
 
 export type SurveyQuestion = {
@@ -77,6 +78,7 @@ export type SurveyAnalyticsSegment = {
     label: string;
     count?: number;
     score?: number;
+    percentage?: number;
 };
 
 export type SurveyAnalyticsQuestion = {
@@ -84,6 +86,8 @@ export type SurveyAnalyticsQuestion = {
     type: SurveyQuestionType;
     title: string;
     description: string | null;
+    response_count: number;
+    demographic_key?: SurveyQuestionSettings['demographic_key'];
     responses?: string[];
     segments?: SurveyAnalyticsSegment[];
     average?: number | null;
@@ -101,6 +105,7 @@ export type SurveyAnalytics = {
         completed_count: number;
         question_count: number;
         completion_rate: number;
+        question_response_segments: SurveyAnalyticsSegment[];
     };
     questions: SurveyAnalyticsQuestion[];
 };
