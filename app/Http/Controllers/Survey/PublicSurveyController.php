@@ -19,6 +19,8 @@ class PublicSurveyController extends Controller
 {
     public function access(Request $request, Survey $survey): Response
     {
+        $this->ensureSurveyIsAvailable($survey);
+
         $survey->load('questions.options');
 
         return Inertia::render('surveys/PublicAccess', [
@@ -30,9 +32,7 @@ class PublicSurveyController extends Controller
 
     public function verify(VerifySurveyAccessCodeRequest $request, Survey $survey): RedirectResponse
     {
-        if (! $survey->isPublished() || $survey->isClosed()) {
-            abort(404);
-        }
+        $this->ensureSurveyIsAvailable($survey);
 
         if (! Hash::check($request->validated('access_code'), $survey->access_code_hash)) {
             return back()->withErrors([
@@ -47,12 +47,10 @@ class PublicSurveyController extends Controller
 
     public function respond(Request $request, Survey $survey): Response|RedirectResponse
     {
+        $this->ensureSurveyIsAvailable($survey);
+
         if (! $request->session()->get($this->sessionKey($survey), false)) {
             return to_route('surveys.public.access.show', $survey->public_id);
-        }
-
-        if (! $survey->isPublished() || $survey->isClosed()) {
-            abort(404);
         }
 
         $survey->load('questions.options');
@@ -120,5 +118,12 @@ class PublicSurveyController extends Controller
     protected function sessionKey(Survey $survey): string
     {
         return sprintf('survey_access.%s', $survey->public_id);
+    }
+
+    protected function ensureSurveyIsAvailable(Survey $survey): void
+    {
+        if (! $survey->isPublished() || $survey->isClosed()) {
+            abort(404);
+        }
     }
 }

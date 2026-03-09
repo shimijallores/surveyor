@@ -50,7 +50,7 @@ export type SurveySummary = {
     title: string;
     description: string | null;
     status: SurveyStatus;
-    share_path: string;
+    share_path: string | null;
     question_count: number;
     response_count: number;
     completed_count: number;

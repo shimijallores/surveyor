@@ -149,7 +149,7 @@ const destroy = (): void => {
                                 <p class="mt-2 text-sm leading-6 break-all">
                                     {{
                                         shareUrl ||
-                                        'Create the survey to unlock its share link.'
+                                        'Publish the survey to make its respondent link available.'
                                     }}
                                 </p>
                             </div>
@@ -158,6 +158,7 @@ const destroy = (): void => {
                                 <Button
                                     type="button"
                                     variant="outline"
+                                    :disabled="!shareUrl"
                                     @click="copyLink"
                                 >
                                     <Copy class="mr-2 size-4" />

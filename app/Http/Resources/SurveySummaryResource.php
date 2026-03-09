@@ -24,7 +24,9 @@ class SurveySummaryResource extends JsonResource
             'title' => $survey->title,
             'description' => $survey->description,
             'status' => $survey->status->value,
-            'share_path' => route('surveys.public.access.show', $survey->public_id, false),
+            'share_path' => $survey->isPublished()
+                ? route('surveys.public.access.show', $survey->public_id, false)
+                : null,
             'question_count' => $survey->questions_count ?? $survey->questions()->count(),
             'response_count' => $survey->responses_count ?? $survey->responses()->count(),
             'completed_count' => $survey->completed_responses_count ?? $survey->responses()->where('is_completed', true)->count(),

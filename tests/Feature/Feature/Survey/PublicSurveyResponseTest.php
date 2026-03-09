@@ -87,6 +87,21 @@ test('participants must enter the correct access code before responding', functi
         ->assertRedirect();
 });
 
+test('draft surveys are not accessible on public routes', function () {
+    $survey = Survey::factory()
+        ->for(User::factory())
+        ->create([
+            'access_code_hash' => Hash::make('secret-123'),
+            'status' => SurveyStatus::Draft,
+        ]);
+
+    get(route('surveys.public.access.show', $survey->public_id))->assertNotFound();
+
+    post(route('surveys.public.access.verify', $survey->public_id), [
+        'access_code' => 'secret-123',
+    ])->assertNotFound();
+});
+
 test('participants receive plain props on the public access page', function () {
     $survey = publishedSurvey();
 
@@ -95,7 +110,7 @@ test('participants receive plain props on the public access page', function () {
     $response
         ->assertOk()
         ->assertInertia(
-            fn (Assert $page) => $page
+            fn(Assert $page) => $page
                 ->component('surveys/PublicAccess')
                 ->where('survey.public_id', $survey->public_id)
                 ->where('survey.status', SurveyStatus::Published->value)
@@ -116,7 +131,7 @@ test('participants receive plain props on the public response page after unlock'
     $response
         ->assertOk()
         ->assertInertia(
-            fn (Assert $page) => $page
+            fn(Assert $page) => $page
                 ->component('surveys/PublicRespond')
                 ->where('survey.public_id', $survey->public_id)
                 ->where('inviteMessage', "You've been invited as a participant for this survey. Answer each question once, then submit when you're ready.")

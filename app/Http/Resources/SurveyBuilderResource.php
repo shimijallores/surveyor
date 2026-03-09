@@ -26,11 +26,13 @@ class SurveyBuilderResource extends JsonResource
             'status' => $survey->status->value,
             'published_at' => $survey->published_at?->toIso8601String(),
             'closed_at' => $survey->closed_at?->toIso8601String(),
-            'share_path' => route('surveys.public.access.show', $survey->public_id, false),
+            'share_path' => $survey->isPublished()
+                ? route('surveys.public.access.show', $survey->public_id, false)
+                : null,
             'questions' => $survey->questions
                 ->sortBy('position')
                 ->values()
-                ->map(fn ($question): array => [
+                ->map(fn($question): array => [
                     'id' => $question->id,
                     'type' => $question->type->value,
                     'title' => $question->title,
@@ -41,7 +43,7 @@ class SurveyBuilderResource extends JsonResource
                     'options' => $question->options
                         ->sortBy('position')
                         ->values()
-                        ->map(fn ($option): array => [
+                        ->map(fn($option): array => [
                             'id' => $option->id,
                             'label' => $option->label,
                             'position' => $option->position,

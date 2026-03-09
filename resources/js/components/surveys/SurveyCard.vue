@@ -20,6 +20,10 @@ const props = defineProps<{
 }>();
 
 const shareUrl = computed(() => {
+    if (!props.survey.share_path) {
+        return '';
+    }
+
     if (/^https?:\/\//.test(props.survey.share_path)) {
         return props.survey.share_path;
     }
@@ -133,11 +137,15 @@ const handleCardKeydown = (event: KeyboardEvent): void => {
             class="grid gap-2 border-t border-border pt-4 sm:grid-cols-2"
             @click.stop
         >
-            <Button as-child variant="outline" class="h-9 px-3">
+            <Button v-if="shareUrl" as-child variant="outline" class="h-9 px-3">
                 <a :href="shareUrl" target="_blank" rel="noopener noreferrer">
                     <ExternalLink class="mr-2 size-4" />
                     Direct link
                 </a>
+            </Button>
+            <Button v-else variant="outline" class="h-9 px-3" disabled>
+                <ExternalLink class="mr-2 size-4" />
+                Publish first
             </Button>
 
             <Button as-child class="h-9 px-3">

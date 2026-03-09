@@ -57,11 +57,11 @@ test('authenticated users can view their survey dashboard', function () {
     $response
         ->assertOk()
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->component('Dashboard')
                 ->where('surveys.0.title', 'Team pulse')
                 ->where('surveys.0.status', SurveyStatus::Draft->value)
-                ->where('surveys.0.share_path', route('surveys.public.access.show', $survey->public_id, false))
+                ->where('surveys.0.share_path', null)
                 ->where('stats.total_surveys', 1),
         );
 });
@@ -84,7 +84,7 @@ test('dashboard only includes recent surveys while library includes all surveys'
     $dashboardResponse
         ->assertOk()
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->component('Dashboard')
                 ->has('surveys', 6)
                 ->where('surveys.0.title', 'Survey 8')
@@ -95,7 +95,7 @@ test('dashboard only includes recent surveys while library includes all surveys'
     $libraryResponse
         ->assertOk()
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->component('surveys/Index')
                 ->has('surveys', 8)
                 ->where('surveys.0.title', 'Survey 8')
@@ -206,11 +206,11 @@ test('survey owners receive plain analytics props', function () {
     $response
         ->assertOk()
         ->assertInertia(
-            fn(Assert $page) => $page
+            fn (Assert $page) => $page
                 ->component('surveys/Analytics')
                 ->where('survey.title', 'Analytics payload')
                 ->where('survey.status', SurveyStatus::Draft->value)
-                ->where('survey.share_path', route('surveys.public.access.show', $survey->public_id, false))
+                ->where('survey.share_path', null)
                 ->where('analytics.summary.response_count', 0)
                 ->where('analytics.summary.question_count', 0)
                 ->has('analytics.questions', 0),
