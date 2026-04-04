@@ -44,6 +44,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import type {
     BreadcrumbItem,
+    SurveyCategory,
     SurveyBuilder,
     SurveyBuilderForm,
     SurveyQuestion,
@@ -107,6 +108,9 @@ const demographicPresetQuestions = (): SurveyQuestion[] => [
 
 const props = defineProps<Props>();
 
+const createClientKey = (): string =>
+    `category-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Dashboard', href: dashboard() },
     {
@@ -151,9 +155,18 @@ const form = useForm<SurveyBuilderForm>(
         title: props.survey.title,
         description: props.survey.description ?? '',
         access_code: '',
+        categories: props.survey.categories.map((category) => ({
+            ...category,
+            description: category.description ?? '',
+            client_key: category.client_key || createClientKey(),
+        })),
         questions: props.survey.questions.map((question) => ({
             ...question,
             description: question.description ?? '',
+            category_client_key:
+                question.category_client_key ??
+                props.survey.categories[0]?.client_key ??
+                null,
             settings: {
                 ...question.settings,
                 allow_multiple: question.settings.allow_multiple ?? false,
@@ -169,6 +182,74 @@ const form = useForm<SurveyBuilderForm>(
 
 form.dontRemember('access_code');
 
+const createCategory = (name = ''): SurveyCategory => ({
+    id: null,
+    name,
+    description: '',
+    position: form.categories.length,
+    client_key: createClientKey(),
+});
+
+if (form.categories.length === 0) {
+    form.categories.push(createCategory('General'));
+
+    const fallbackCategory = form.categories[0]?.client_key ?? null;
+
+    form.questions = form.questions.map((question) => ({
+        ...question,
+        category_client_key: question.category_client_key ?? fallbackCategory,
+    }));
+}
+
+const syncCategoryPositions = (): void => {
+    form.categories = form.categories.map((category, index) => ({
+        ...category,
+        position: index,
+    }));
+};
+
+const addCategory = (): void => {
+    form.categories.push(
+        createCategory(`Category ${form.categories.length + 1}`),
+    );
+    syncCategoryPositions();
+};
+
+const moveCategory = (index: number, direction: -1 | 1): void => {
+    const target = index + direction;
+
+    if (target < 0 || target >= form.categories.length) {
+        return;
+    }
+
+    const [category] = form.categories.splice(index, 1);
+    form.categories.splice(target, 0, category);
+    syncCategoryPositions();
+};
+
+const removeCategory = (index: number): void => {
+    if (form.categories.length <= 1) {
+        toast.error('At least one category is required.');
+
+        return;
+    }
+
+    const removed = form.categories[index];
+
+    form.categories.splice(index, 1);
+    syncCategoryPositions();
+
+    const fallback = form.categories[0]?.client_key ?? null;
+
+    form.questions = form.questions.map((question) => ({
+        ...question,
+        category_client_key:
+            question.category_client_key === removed.client_key
+                ? fallback
+                : question.category_client_key,
+    }));
+};
+
 const createQuestion = (type: SurveyQuestionType): SurveyQuestion => ({
     id: null,
     type,
@@ -176,6 +257,7 @@ const createQuestion = (type: SurveyQuestionType): SurveyQuestion => ({
     description: '',
     is_required: false,
     position: form.questions.length,
+    category_client_key: form.categories[0]?.client_key ?? null,
     settings: {
         allow_multiple: false,
         min: 1,
@@ -229,6 +311,14 @@ const addDemographics = (): void => {
     }
 
     form.questions.push(...questionsToAdd);
+
+    const defaultCategory = form.categories[0]?.client_key ?? null;
+
+    form.questions = form.questions.map((question) => ({
+        ...question,
+        category_client_key: question.category_client_key ?? defaultCategory,
+    }));
+
     syncPositions();
 
     toast.success('Demographics added', {
@@ -339,6 +429,10 @@ const submit = (): void => {
     form.transform((data) => ({
         ...data,
         description: data.description || null,
+        categories: data.categories.map((category) => ({
+            ...category,
+            description: category.description || null,
+        })),
         questions: data.questions.map((question) => ({
             ...question,
             description: question.description || null,
@@ -491,6 +585,98 @@ const submit = (): void => {
                         </CardContent>
                     </Card>
 
+                    <Card class="border-border bg-card">
+                        <CardHeader>
+                            <CardTitle>Survey categories</CardTitle>
+                            <CardDescription
+                                >Organize your survey by category, then assign
+                                each question to one category.</CardDescription
+                            >
+                        </CardHeader>
+                        <CardContent class="space-y-4">
+                            <div
+                                v-for="(
+                                    category, categoryIndex
+                                ) in form.categories"
+                                :key="category.client_key"
+                                class="grid gap-3 border border-border bg-background p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                            >
+                                <div class="grid gap-2">
+                                    <Label
+                                        :for="`category-name-${categoryIndex}`"
+                                        >Name</Label
+                                    >
+                                    <Input
+                                        :id="`category-name-${categoryIndex}`"
+                                        v-model="category.name"
+                                        placeholder="Category name"
+                                    />
+                                    <InputError
+                                        :message="
+                                            fieldError(
+                                                `categories.${categoryIndex}.name`,
+                                            )
+                                        "
+                                    />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label
+                                        :for="`category-description-${categoryIndex}`"
+                                        >Description</Label
+                                    >
+                                    <Input
+                                        :id="`category-description-${categoryIndex}`"
+                                        v-model="category.description"
+                                        placeholder="Optional category context"
+                                    />
+                                </div>
+                                <div class="flex items-end gap-2">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        @click="moveCategory(categoryIndex, -1)"
+                                    >
+                                        <ChevronUp class="size-4" />
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        @click="moveCategory(categoryIndex, 1)"
+                                    >
+                                        <ChevronDown class="size-4" />
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        class="text-red-600 hover:text-red-600"
+                                        @click="removeCategory(categoryIndex)"
+                                    >
+                                        <Trash2 class="size-4" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <InputError
+                                    :message="fieldError('categories')"
+                                />
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    @click="addCategory"
+                                >
+                                    Add category
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <div class="space-y-4">
                         <div class="flex items-end justify-between gap-4">
                             <div>
@@ -585,9 +771,7 @@ const submit = (): void => {
                             </CardHeader>
 
                             <CardContent class="grid gap-5">
-                                <div
-                                    class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_15rem]"
-                                >
+                                <div class="grid gap-5 lg:grid-cols-3">
                                     <div class="grid gap-2">
                                         <Label
                                             :for="`question-title-${questionIndex}`"
@@ -634,6 +818,42 @@ const submit = (): void => {
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
+                                    </div>
+
+                                    <div class="grid gap-2">
+                                        <Label>Category</Label>
+                                        <Select
+                                            :model-value="
+                                                question.category_client_key ??
+                                                undefined
+                                            "
+                                            @update:model-value="
+                                                question.category_client_key =
+                                                    String($event)
+                                            "
+                                        >
+                                            <SelectTrigger class="w-full">
+                                                <SelectValue
+                                                    placeholder="Choose category"
+                                                />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem
+                                                    v-for="category in form.categories"
+                                                    :key="category.client_key"
+                                                    :value="category.client_key"
+                                                >
+                                                    {{ category.name }}
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError
+                                            :message="
+                                                fieldError(
+                                                    `questions.${questionIndex}.category_client_key`,
+                                                )
+                                            "
+                                        />
                                     </div>
                                 </div>
 
@@ -885,7 +1105,7 @@ const submit = (): void => {
                                 </div>
 
                                 <div
-                                    class="rounded-[1rem] border border-border bg-background px-4 py-4 text-sm text-muted-foreground"
+                                    class="rounded-2xl border border-border bg-background px-4 py-4 text-sm text-muted-foreground"
                                 >
                                     Add the common demographic preset when you
                                     want age and location captured

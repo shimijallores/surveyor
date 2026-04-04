@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SurveyStatus;
+use App\Models\SurveyCategory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,6 +62,11 @@ class Survey extends Model
     public function questions(): HasMany
     {
         return $this->hasMany(SurveyQuestion::class)->orderBy('position');
+    }
+
+    public function categories(): HasMany
+    {
+        return $this->hasMany(SurveyCategory::class)->orderBy('position');
     }
 
     public function responses(): HasMany

@@ -2,14 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Enums\SurveyQuestionType;
 use App\Models\Survey;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SurveyQuestion>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SurveyCategory>
  */
-class SurveyQuestionFactory extends Factory
+class SurveyCategoryFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -20,13 +19,9 @@ class SurveyQuestionFactory extends Factory
     {
         return [
             'survey_id' => Survey::factory(),
-            'survey_category_id' => null,
-            'type' => SurveyQuestionType::OpenEnded,
-            'title' => fake()->sentence(6),
+            'name' => fake()->words(3, true),
             'description' => fake()->optional()->sentence(),
-            'is_required' => fake()->boolean(60),
             'position' => 0,
-            'settings' => [],
         ];
     }
 }

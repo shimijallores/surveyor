@@ -22,12 +22,18 @@ trait SurveyValidationRules
             'title' => ['required', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:5000'],
             'access_code' => [$accessCodeRequired ? 'required' : 'nullable', 'string', 'min:4', 'max:64'],
+            'categories' => ['required', 'array', 'min:1', 'max:12'],
+            'categories.*.name' => ['required', 'string', 'max:120'],
+            'categories.*.description' => ['nullable', 'string', 'max:500'],
+            'categories.*.position' => ['required', 'integer', 'min:0'],
+            'categories.*.client_key' => ['required', 'string', 'max:64'],
             'questions' => ['required', 'array', 'min:1', 'max:50'],
             'questions.*.type' => ['required', 'string', Rule::in($questionTypes)],
             'questions.*.title' => ['required', 'string', 'max:255'],
             'questions.*.description' => ['nullable', 'string', 'max:1000'],
             'questions.*.is_required' => ['required', 'boolean'],
             'questions.*.position' => ['required', 'integer', 'min:0'],
+            'questions.*.category_client_key' => ['required', 'string', 'max:64'],
             'questions.*.settings' => ['nullable', 'array'],
             'questions.*.settings.min' => ['nullable', 'integer', 'min:0', 'max:100'],
             'questions.*.settings.max' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -48,15 +54,29 @@ trait SurveyValidationRules
     {
         return [
             function (Validator $validator): void {
+                $categories = $this->input('categories', []);
                 $questions = $this->input('questions', []);
+                $categoryKeys = collect($categories)
+                    ->pluck('client_key')
+                    ->filter(static fn(mixed $value): bool => is_string($value) && $value !== '')
+                    ->values();
+
+                if ($categoryKeys->count() !== $categoryKeys->unique()->count()) {
+                    $validator->errors()->add('categories', 'Each category must have a unique client key.');
+                }
 
                 foreach ($questions as $index => $question) {
                     $type = $question['type'] ?? null;
                     $options = $question['options'] ?? [];
                     $settings = $question['settings'] ?? [];
+                    $categoryClientKey = $question['category_client_key'] ?? null;
 
                     if (! is_string($type)) {
                         continue;
+                    }
+
+                    if (! is_string($categoryClientKey) || ! $categoryKeys->contains($categoryClientKey)) {
+                        $validator->errors()->add("questions.{$index}.category_client_key", 'Select a valid category for this question.');
                     }
 
                     if (in_array($type, [SurveyQuestionType::MultipleChoice->value, SurveyQuestionType::Ranking->value], true) && count($options) < 2) {

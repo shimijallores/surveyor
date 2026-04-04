@@ -9,7 +9,7 @@ import {
     MessageSquareText,
     Scale,
 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import SurveyBackdrop from '@/components/surveys/SurveyBackdrop.vue';
 import SurveyStatusBadge from '@/components/surveys/SurveyStatusBadge.vue';
@@ -154,6 +154,36 @@ const rankingLabel = (question: SurveyQuestion, optionId: number): string => {
 const submit = (): void => {
     form.submit(submitResponse({ survey: props.survey.public_id }));
 };
+
+const questionGroups = computed(() => {
+    const grouped = props.survey.categories
+        .sort((left, right) => left.position - right.position)
+        .map((category) => ({
+            key: category.client_key,
+            name: category.name,
+            questions: props.survey.questions
+                .filter(
+                    (question) =>
+                        question.category_client_key === category.client_key,
+                )
+                .sort((left, right) => left.position - right.position),
+        }))
+        .filter((group) => group.questions.length > 0);
+
+    const uncategorized = props.survey.questions
+        .filter((question) => !question.category_client_key)
+        .sort((left, right) => left.position - right.position);
+
+    if (uncategorized.length > 0) {
+        grouped.push({
+            key: 'uncategorized',
+            name: 'General',
+            questions: uncategorized,
+        });
+    }
+
+    return grouped;
+});
 </script>
 
 <template>
@@ -215,6 +245,17 @@ const submit = (): void => {
                         >
                             <span
                                 class="text-[10px] tracking-[0.2em] text-muted-foreground uppercase"
+                                >Categories</span
+                            >
+                            <span class="text-base font-semibold">{{
+                                survey.categories.length
+                            }}</span>
+                        </span>
+                        <span
+                            class="inline-flex items-center gap-2 border border-border bg-background px-3 py-2 text-foreground"
+                        >
+                            <span
+                                class="text-[10px] tracking-[0.2em] text-muted-foreground uppercase"
                                 >Mode</span
                             >
                             <SurveyStatusBadge :status="survey.status" />
@@ -263,267 +304,303 @@ const submit = (): void => {
                 </div>
             </section>
 
-            <div class="space-y-5">
-                <Card
-                    v-for="question in survey.questions"
-                    :key="question.id ?? question.position"
-                    class="border-border bg-card shadow-none"
+            <div class="space-y-8">
+                <section
+                    v-for="group in questionGroups"
+                    :key="group.key"
+                    class="space-y-4"
                 >
-                    <CardHeader class="pb-4">
-                        <div class="flex items-start gap-4">
-                            <div
-                                class="flex size-11 shrink-0 items-center justify-center border border-border bg-background text-foreground"
-                            >
-                                <MessageSquareText
-                                    v-if="question.type === 'open_ended'"
-                                    class="size-5"
-                                />
-                                <CircleDot
-                                    v-else-if="
-                                        question.type === 'yes_no' ||
-                                        question.type === 'multiple_choice'
-                                    "
-                                    class="size-5"
-                                />
-                                <Scale
-                                    v-else-if="question.type === 'rating_scale'"
-                                    class="size-5"
-                                />
-                                <ListOrdered v-else class="size-5" />
-                            </div>
-                            <div class="min-w-0 flex-1 space-y-2">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span
-                                        class="text-[10px] tracking-[0.2em] text-muted-foreground uppercase"
-                                    >
-                                        Question {{ question.position + 1 }}
-                                    </span>
-                                    <span
-                                        v-if="question.is_required"
-                                        class="inline-flex items-center border border-red-500/20 bg-red-500/8 px-2 py-0.5 text-[10px] tracking-[0.16em] text-red-600 uppercase dark:text-red-300"
-                                    >
-                                        Required
-                                    </span>
-                                </div>
-                                <CardTitle class="text-xl leading-tight">
-                                    {{ question.title }}
-                                </CardTitle>
-                                <CardDescription
-                                    class="max-w-3xl text-sm leading-6"
-                                    >{{
-                                        question.description ||
-                                        'Respond based on your experience.'
-                                    }}</CardDescription
+                    <div class="space-y-1">
+                        <p
+                            class="text-xs tracking-[0.22em] text-muted-foreground uppercase"
+                        >
+                            Category
+                        </p>
+                        <h2 class="text-2xl font-semibold tracking-tight">
+                            {{ group.name }}
+                        </h2>
+                    </div>
+
+                    <Card
+                        v-for="question in group.questions"
+                        :key="question.id ?? question.position"
+                        class="border-border bg-card shadow-none"
+                    >
+                        <CardHeader class="pb-4">
+                            <div class="flex items-start gap-4">
+                                <div
+                                    class="flex size-11 shrink-0 items-center justify-center border border-border bg-background text-foreground"
                                 >
+                                    <MessageSquareText
+                                        v-if="question.type === 'open_ended'"
+                                        class="size-5"
+                                    />
+                                    <CircleDot
+                                        v-else-if="
+                                            question.type === 'yes_no' ||
+                                            question.type === 'multiple_choice'
+                                        "
+                                        class="size-5"
+                                    />
+                                    <Scale
+                                        v-else-if="
+                                            question.type === 'rating_scale'
+                                        "
+                                        class="size-5"
+                                    />
+                                    <ListOrdered v-else class="size-5" />
+                                </div>
+                                <div class="min-w-0 flex-1 space-y-2">
+                                    <div
+                                        class="flex flex-wrap items-center gap-2"
+                                    >
+                                        <span
+                                            class="text-[10px] tracking-[0.2em] text-muted-foreground uppercase"
+                                        >
+                                            Question {{ question.position + 1 }}
+                                        </span>
+                                        <span
+                                            v-if="question.is_required"
+                                            class="inline-flex items-center border border-red-500/20 bg-red-500/8 px-2 py-0.5 text-[10px] tracking-[0.16em] text-red-600 uppercase dark:text-red-300"
+                                        >
+                                            Required
+                                        </span>
+                                    </div>
+                                    <CardTitle class="text-xl leading-tight">
+                                        {{ question.title }}
+                                    </CardTitle>
+                                    <CardDescription
+                                        class="max-w-3xl text-sm leading-6"
+                                        >{{
+                                            question.description ||
+                                            'Respond based on your experience.'
+                                        }}</CardDescription
+                                    >
+                                </div>
                             </div>
-                        </div>
-                    </CardHeader>
+                        </CardHeader>
 
-                    <CardContent class="space-y-4 pt-0">
-                        <textarea
-                            v-if="question.type === 'open_ended'"
-                            :value="
-                                String(form.answers[answerKey(question)] ?? '')
-                            "
-                            rows="4"
-                            class="min-h-32 w-full border border-input bg-background px-4 py-3 text-sm leading-6 transition outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                            placeholder="Type your response here"
-                            @input="
-                                form.answers[answerKey(question)] = (
-                                    $event.target as HTMLTextAreaElement
-                                ).value
-                            "
-                        />
-
-                        <div
-                            v-else-if="question.type === 'yes_no'"
-                            class="grid gap-3 md:grid-cols-2"
-                        >
-                            <button
-                                type="button"
-                                class="border px-4 py-4 text-left transition hover:border-foreground"
-                                :class="
-                                    form.answers[answerKey(question)] === true
-                                        ? 'border-foreground bg-muted'
-                                        : 'border-border/70'
-                                "
-                                @click="
-                                    form.answers[answerKey(question)] = true
-                                "
-                            >
-                                Yes
-                            </button>
-                            <button
-                                type="button"
-                                class="border px-4 py-4 text-left transition hover:border-foreground"
-                                :class="
-                                    form.answers[answerKey(question)] === false
-                                        ? 'border-foreground bg-muted'
-                                        : 'border-border/70'
-                                "
-                                @click="
-                                    form.answers[answerKey(question)] = false
-                                "
-                            >
-                                No
-                            </button>
-                        </div>
-
-                        <div
-                            v-else-if="question.type === 'multiple_choice'"
-                            class="space-y-3"
-                        >
-                            <button
-                                v-for="option in question.options"
-                                :key="option.id ?? option.position"
-                                type="button"
-                                class="flex w-full items-center gap-3 border px-4 py-4 text-left transition hover:border-foreground"
-                                :class="
-                                    Array.isArray(
-                                        form.answers[answerKey(question)],
+                        <CardContent class="space-y-4 pt-0">
+                            <textarea
+                                v-if="question.type === 'open_ended'"
+                                :value="
+                                    String(
+                                        form.answers[answerKey(question)] ?? '',
                                     )
-                                        ? (
-                                              form.answers[
-                                                  answerKey(question)
-                                              ] as number[]
-                                          ).includes(option.id ?? 0)
-                                            ? 'border-foreground bg-muted'
-                                            : 'border-border/70'
-                                        : form.answers[answerKey(question)] ===
-                                            (option.id ?? 0)
-                                          ? 'border-foreground bg-muted'
-                                          : 'border-border/70'
                                 "
-                                @click="toggleOption(question, option.id)"
-                            >
-                                <Checkbox
-                                    v-if="question.settings.allow_multiple"
-                                    :model-value="
-                                        Array.isArray(
-                                            form.answers[answerKey(question)],
-                                        ) &&
-                                        (
-                                            form.answers[
-                                                answerKey(question)
-                                            ] as number[]
-                                        ).includes(option.id ?? 0)
-                                    "
-                                />
-                                <CircleDot
-                                    v-else
-                                    class="size-4 text-muted-foreground"
-                                />
-                                <span>{{ option.label }}</span>
-                            </button>
-                        </div>
+                                rows="4"
+                                class="min-h-32 w-full border border-input bg-background px-4 py-3 text-sm leading-6 transition outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                placeholder="Type your response here"
+                                @input="
+                                    form.answers[answerKey(question)] = (
+                                        $event.target as HTMLTextAreaElement
+                                    ).value
+                                "
+                            />
 
-                        <div
-                            v-else-if="question.type === 'rating_scale'"
-                            class="space-y-4"
-                        >
-                            <div class="grid gap-3 md:grid-cols-5">
+                            <div
+                                v-else-if="question.type === 'yes_no'"
+                                class="grid gap-3 md:grid-cols-2"
+                            >
                                 <button
-                                    v-for="value in Array.from(
-                                        {
-                                            length:
-                                                (question.settings.max ?? 5) -
-                                                (question.settings.min ?? 1) +
-                                                1,
-                                        },
-                                        (_, index) =>
-                                            (question.settings.min ?? 1) +
-                                            index,
-                                    )"
-                                    :key="value"
                                     type="button"
-                                    class="border px-4 py-4 text-center transition hover:border-foreground"
+                                    class="border px-4 py-4 text-left transition hover:border-foreground"
                                     :class="
                                         form.answers[answerKey(question)] ===
-                                        value
+                                        true
+                                            ? 'border-foreground bg-muted'
+                                            : 'border-border/70'
+                                    "
+                                    @click="
+                                        form.answers[answerKey(question)] = true
+                                    "
+                                >
+                                    Yes
+                                </button>
+                                <button
+                                    type="button"
+                                    class="border px-4 py-4 text-left transition hover:border-foreground"
+                                    :class="
+                                        form.answers[answerKey(question)] ===
+                                        false
                                             ? 'border-foreground bg-muted'
                                             : 'border-border/70'
                                     "
                                     @click="
                                         form.answers[answerKey(question)] =
-                                            value
+                                            false
                                     "
                                 >
-                                    {{ value }}
+                                    No
                                 </button>
                             </div>
-                            <div
-                                class="flex items-center justify-between text-sm text-muted-foreground"
-                            >
-                                <span>{{
-                                    question.settings.min_label ||
-                                    question.settings.min
-                                }}</span>
-                                <span>{{
-                                    question.settings.max_label ||
-                                    question.settings.max
-                                }}</span>
-                            </div>
-                        </div>
 
-                        <div v-else class="space-y-3">
                             <div
-                                class="flex items-center gap-2 text-sm text-muted-foreground"
+                                v-else-if="question.type === 'multiple_choice'"
+                                class="space-y-3"
                             >
-                                <ArrowLeftRight class="size-4" />
-                                Drag and drop each option into your preferred
-                                order.
+                                <button
+                                    v-for="option in question.options"
+                                    :key="option.id ?? option.position"
+                                    type="button"
+                                    class="flex w-full items-center gap-3 border px-4 py-4 text-left transition hover:border-foreground"
+                                    :class="
+                                        Array.isArray(
+                                            form.answers[answerKey(question)],
+                                        )
+                                            ? (
+                                                  form.answers[
+                                                      answerKey(question)
+                                                  ] as number[]
+                                              ).includes(option.id ?? 0)
+                                                ? 'border-foreground bg-muted'
+                                                : 'border-border/70'
+                                            : form.answers[
+                                                    answerKey(question)
+                                                ] === (option.id ?? 0)
+                                              ? 'border-foreground bg-muted'
+                                              : 'border-border/70'
+                                    "
+                                    @click="toggleOption(question, option.id)"
+                                >
+                                    <Checkbox
+                                        v-if="question.settings.allow_multiple"
+                                        :model-value="
+                                            Array.isArray(
+                                                form.answers[
+                                                    answerKey(question)
+                                                ],
+                                            ) &&
+                                            (
+                                                form.answers[
+                                                    answerKey(question)
+                                                ] as number[]
+                                            ).includes(option.id ?? 0)
+                                        "
+                                    />
+                                    <CircleDot
+                                        v-else
+                                        class="size-4 text-muted-foreground"
+                                    />
+                                    <span>{{ option.label }}</span>
+                                </button>
                             </div>
+
                             <div
-                                v-for="(optionId, index) in form.answers[
-                                    answerKey(question)
-                                ] as number[]"
-                                :key="`${question.id}-${optionId}`"
-                                draggable="true"
-                                class="flex cursor-grab items-center justify-between gap-3 border border-border px-4 py-4 transition hover:border-foreground active:cursor-grabbing"
-                                :class="
-                                    draggingRank?.questionId === question.id &&
-                                    draggingRank?.index === index
-                                        ? 'border-foreground bg-muted/70 opacity-70'
-                                        : 'border-border/70 bg-background'
-                                "
-                                @dragstart="startRankDrag(question, index)"
-                                @dragend="endRankDrag"
-                                @dragover.prevent
-                                @drop.prevent="dropRank(question, index)"
+                                v-else-if="question.type === 'rating_scale'"
+                                class="space-y-4"
                             >
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="flex size-10 items-center justify-center border border-border bg-card text-muted-foreground"
+                                <div class="grid gap-3 md:grid-cols-5">
+                                    <button
+                                        v-for="value in Array.from(
+                                            {
+                                                length:
+                                                    (question.settings.max ??
+                                                        5) -
+                                                    (question.settings.min ??
+                                                        1) +
+                                                    1,
+                                            },
+                                            (_, index) =>
+                                                (question.settings.min ?? 1) +
+                                                index,
+                                        )"
+                                        :key="value"
+                                        type="button"
+                                        class="border px-4 py-4 text-center transition hover:border-foreground"
+                                        :class="
+                                            form.answers[
+                                                answerKey(question)
+                                            ] === value
+                                                ? 'border-foreground bg-muted'
+                                                : 'border-border/70'
+                                        "
+                                        @click="
+                                            form.answers[answerKey(question)] =
+                                                value
+                                        "
                                     >
-                                        <GripVertical class="size-4" />
-                                    </div>
-
-                                    <div>
-                                        <p
-                                            class="text-xs tracking-[0.2em] text-muted-foreground uppercase"
-                                        >
-                                            Rank {{ index + 1 }}
-                                        </p>
-                                        <p class="mt-1 font-medium">
-                                            {{
-                                                rankingLabel(question, optionId)
-                                            }}
-                                        </p>
-                                    </div>
+                                        {{ value }}
+                                    </button>
                                 </div>
                                 <div
-                                    class="text-right text-xs tracking-[0.16em] text-muted-foreground uppercase"
+                                    class="flex items-center justify-between text-sm text-muted-foreground"
                                 >
-                                    Drag
+                                    <span>{{
+                                        question.settings.min_label ||
+                                        question.settings.min
+                                    }}</span>
+                                    <span>{{
+                                        question.settings.max_label ||
+                                        question.settings.max
+                                    }}</span>
                                 </div>
                             </div>
-                        </div>
 
-                        <InputError
-                            :message="form.errors[`answers.${question.id}`]"
-                        />
-                    </CardContent>
-                </Card>
+                            <div v-else class="space-y-3">
+                                <div
+                                    class="flex items-center gap-2 text-sm text-muted-foreground"
+                                >
+                                    <ArrowLeftRight class="size-4" />
+                                    Drag and drop each option into your
+                                    preferred order.
+                                </div>
+                                <div
+                                    v-for="(optionId, index) in form.answers[
+                                        answerKey(question)
+                                    ] as number[]"
+                                    :key="`${question.id}-${optionId}`"
+                                    draggable="true"
+                                    class="flex cursor-grab items-center justify-between gap-3 border border-border px-4 py-4 transition hover:border-foreground active:cursor-grabbing"
+                                    :class="
+                                        draggingRank?.questionId ===
+                                            question.id &&
+                                        draggingRank?.index === index
+                                            ? 'border-foreground bg-muted/70 opacity-70'
+                                            : 'border-border/70 bg-background'
+                                    "
+                                    @dragstart="startRankDrag(question, index)"
+                                    @dragend="endRankDrag"
+                                    @dragover.prevent
+                                    @drop.prevent="dropRank(question, index)"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="flex size-10 items-center justify-center border border-border bg-card text-muted-foreground"
+                                        >
+                                            <GripVertical class="size-4" />
+                                        </div>
+
+                                        <div>
+                                            <p
+                                                class="text-xs tracking-[0.2em] text-muted-foreground uppercase"
+                                            >
+                                                Rank {{ index + 1 }}
+                                            </p>
+                                            <p class="mt-1 font-medium">
+                                                {{
+                                                    rankingLabel(
+                                                        question,
+                                                        optionId,
+                                                    )
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="text-right text-xs tracking-[0.16em] text-muted-foreground uppercase"
+                                    >
+                                        Drag
+                                    </div>
+                                </div>
+                            </div>
+
+                            <InputError
+                                :message="form.errors[`answers.${question.id}`]"
+                            />
+                        </CardContent>
+                    </Card>
+                </section>
 
                 <div class="flex justify-end">
                     <Button

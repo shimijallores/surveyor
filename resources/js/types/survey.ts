@@ -13,6 +13,20 @@ export type SurveyOption = {
     position: number;
 };
 
+export type SurveyCategory = {
+    id: number | null;
+    name: string;
+    description: string | null;
+    position: number;
+    client_key: string;
+};
+
+export type SurveyQuestionCategory = {
+    id: number;
+    name: string;
+    position: number;
+};
+
 export type SurveyQuestionSettings = {
     allow_multiple?: boolean;
     min?: number;
@@ -29,6 +43,8 @@ export type SurveyQuestion = {
     description: string | null;
     is_required: boolean;
     position: number;
+    category_client_key: string | null;
+    category?: SurveyQuestionCategory | null;
     settings: SurveyQuestionSettings;
     options: SurveyOption[];
 };
@@ -43,6 +59,7 @@ export type SurveyBuilder = {
     published_at: string | null;
     closed_at: string | null;
     share_path: string | null;
+    categories: SurveyCategory[];
     questions: SurveyQuestion[];
 };
 
@@ -89,6 +106,8 @@ export type SurveyAnalyticsQuestion = {
     description: string | null;
     response_count: number;
     demographic_key?: SurveyQuestionSettings['demographic_key'];
+    category_id?: number | null;
+    category_name?: string | null;
     responses?: string[];
     segments?: SurveyAnalyticsSegment[];
     average?: number | null;
@@ -107,6 +126,7 @@ export type SurveyAnalytics = {
         question_count: number;
         completion_rate: number;
         question_response_segments: SurveyAnalyticsSegment[];
+        category_response_segments?: SurveyAnalyticsSegment[];
     };
     questions: SurveyAnalyticsQuestion[];
 };
@@ -117,6 +137,7 @@ export type PublicSurvey = {
     title: string;
     description: string | null;
     status: SurveyStatus;
+    categories: SurveyCategory[];
     questions: SurveyQuestion[];
 };
 
@@ -124,6 +145,7 @@ export type SurveyBuilderForm = {
     title: string;
     description: string;
     access_code: string;
+    categories: SurveyCategory[];
     questions: SurveyQuestion[];
 };
 

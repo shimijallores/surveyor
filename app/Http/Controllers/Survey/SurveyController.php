@@ -69,6 +69,7 @@ class SurveyController extends Controller
                 'published_at' => null,
                 'closed_at' => null,
                 'share_path' => null,
+                'categories' => [],
                 'questions' => [],
             ],
             'questionTypes' => $this->questionTypes(),
@@ -88,9 +89,13 @@ class SurveyController extends Controller
                 'status' => SurveyStatus::Draft,
             ]);
 
-            $this->syncQuestions($survey, $request->validated('questions'));
+            $this->syncQuestions(
+                $survey,
+                $request->validated('categories'),
+                $request->validated('questions'),
+            );
 
-            return $survey->fresh(['questions.options']);
+            return $survey->fresh(['categories', 'questions.category', 'questions.options']);
         });
 
         return to_route('surveys.show', $survey)->with('status', 'Survey created successfully.');
@@ -101,7 +106,9 @@ class SurveyController extends Controller
         $this->authorize('view', $survey);
 
         $survey->load([
+            'categories',
             'questions.options',
+            'questions.category',
             'questions.answers',
             'responses.answers',
         ]);
@@ -116,7 +123,7 @@ class SurveyController extends Controller
     {
         $this->authorize('update', $survey);
 
-        $survey->load('questions.options');
+        $survey->load(['categories', 'questions.category', 'questions.options']);
 
         return Inertia::render('surveys/Builder', [
             'mode' => 'edit',
@@ -141,7 +148,11 @@ class SurveyController extends Controller
             }
 
             $survey->update($attributes);
-            $this->syncQuestions($survey, $request->validated('questions'));
+            $this->syncQuestions(
+                $survey,
+                $request->validated('categories'),
+                $request->validated('questions'),
+            );
         });
 
         return to_route('surveys.edit', $survey)->with('status', 'Survey updated successfully.');
@@ -182,17 +193,33 @@ class SurveyController extends Controller
     }
 
     /**
+     * @param  array<int, array<string, mixed>>  $categories
      * @param  array<int, array<string, mixed>>  $questions
      */
-    protected function syncQuestions(Survey $survey, array $questions): void
+    protected function syncQuestions(Survey $survey, array $categories, array $questions): void
     {
         $survey->questions()->delete();
+        $survey->categories()->delete();
+
+        $categoryMap = collect($categories)
+            ->sortBy('position')
+            ->values()
+            ->mapWithKeys(function (array $categoryData) use ($survey): array {
+                $category = $survey->categories()->create([
+                    'name' => $categoryData['name'],
+                    'description' => $categoryData['description'] ?? null,
+                    'position' => $categoryData['position'],
+                ]);
+
+                return [$categoryData['client_key'] => $category];
+            });
 
         collect($questions)
             ->sortBy('position')
             ->values()
-            ->each(function (array $questionData) use ($survey): void {
+            ->each(function (array $questionData) use ($survey, $categoryMap): void {
                 $question = $survey->questions()->create([
+                    'survey_category_id' => $categoryMap->get($questionData['category_client_key'])?->id,
                     'type' => $questionData['type'],
                     'title' => $questionData['title'],
                     'description' => $questionData['description'] ?? null,
@@ -204,7 +231,7 @@ class SurveyController extends Controller
                 collect($questionData['options'] ?? [])
                     ->sortBy('position')
                     ->values()
-                    ->each(fn (array $optionData) => $question->options()->create([
+                    ->each(fn(array $optionData) => $question->options()->create([
                         'label' => $optionData['label'],
                         'position' => $optionData['position'],
                     ]));
@@ -218,7 +245,7 @@ class SurveyController extends Controller
             ->withCount([
                 'questions',
                 'responses',
-                'responses as completed_responses_count' => fn ($query) => $query->where('is_completed', true),
+                'responses as completed_responses_count' => fn($query) => $query->where('is_completed', true),
             ])
             ->latest('updated_at');
     }

@@ -21,7 +21,7 @@ class PublicSurveyController extends Controller
     {
         $this->ensureSurveyIsAvailable($survey);
 
-        $survey->load('questions.options');
+        $survey->load(['categories', 'questions.category', 'questions.options']);
 
         return Inertia::render('surveys/PublicAccess', [
             'survey' => (new PublicSurveyResource($survey))->resolve($request),
@@ -53,7 +53,7 @@ class PublicSurveyController extends Controller
             return to_route('surveys.public.access.show', $survey->public_id);
         }
 
-        $survey->load('questions.options');
+        $survey->load(['categories', 'questions.category', 'questions.options']);
 
         return Inertia::render('surveys/PublicRespond', [
             'survey' => (new PublicSurveyResource($survey))->resolve($request),
@@ -64,7 +64,7 @@ class PublicSurveyController extends Controller
     public function submit(SubmitSurveyResponseRequest $request, Survey $survey): RedirectResponse
     {
         DB::transaction(function () use ($request, $survey): void {
-            $survey->load('questions.options');
+            $survey->load(['questions.options']);
 
             $response = $survey->responses()->create([
                 'is_completed' => true,

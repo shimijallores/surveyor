@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SurveyQuestionType;
+use App\Models\SurveyCategory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,7 @@ class SurveyQuestion extends Model
      */
     protected $fillable = [
         'survey_id',
+        'survey_category_id',
         'type',
         'title',
         'description',
@@ -41,6 +43,11 @@ class SurveyQuestion extends Model
     public function survey(): BelongsTo
     {
         return $this->belongsTo(Survey::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(SurveyCategory::class, 'survey_category_id');
     }
 
     public function options(): HasMany

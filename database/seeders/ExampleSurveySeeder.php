@@ -12,13 +12,7 @@ use Illuminate\Support\Facades\Hash;
 
 class ExampleSurveySeeder extends Seeder
 {
-    /**
-     * @var list<string>
-     */
-    protected array $exampleTitles = [
-        'Philippines Presidential Pulse 2028',
-        'Philippine Food Research Study 2026',
-    ];
+    protected string $surveyTitle = 'Philippines 2028 Governance Pulse: Reform, Accountability, and Cost of Living';
 
     /**
      * Run the database seeds.
@@ -33,264 +27,395 @@ class ExampleSurveySeeder extends Seeder
             ],
         );
 
-        $owner->surveys()->whereIn('title', $this->exampleTitles)->delete();
+        $owner->surveys()->where('title', $this->surveyTitle)->delete();
 
-        $this->seedPresidentialSurvey($owner);
-        $this->seedFoodResearchSurvey($owner);
-    }
-
-    protected function seedPresidentialSurvey(User $owner): void
-    {
         $survey = $owner->surveys()->create([
-            'title' => 'Philippines Presidential Pulse 2028',
-            'description' => 'A fictional nationwide pulse survey exploring voter priorities, regional concerns, and candidate preference ahead of a mock presidential race.',
-            'access_code_hash' => Hash::make('halalan-2028'),
-            'access_code_ciphertext' => 'halalan-2028',
+            'title' => $this->surveyTitle,
+            'description' => 'Public opinion snapshot on the 2028 presidency race, flood control fund accountability, and oil price shocks tied to global conflict and domestic planning.',
+            'access_code_hash' => Hash::make('survey'),
+            'access_code_ciphertext' => 'survey',
             'status' => SurveyStatus::Published,
-            'published_at' => now()->subDays(10),
-            'last_response_at' => now()->subHours(4),
+            'published_at' => now()->subDays(9),
+            'last_response_at' => now()->subHours(3),
         ]);
 
-        $questions = $this->createQuestions($survey, [
-            [
-                'key' => 'candidate',
-                'type' => SurveyQuestionType::MultipleChoice,
-                'title' => 'Which fictional candidate are you most likely to vote for?',
-                'description' => 'Pick the mock candidate you currently lean toward.',
-                'is_required' => true,
-                'position' => 0,
-                'settings' => ['allow_multiple' => false],
-                'options' => [
-                    'Alicia Mercado',
-                    'Ramon de la Cruz',
-                    'Teresa Valdez',
-                    'Undecided',
-                ],
-            ],
-            [
-                'key' => 'priority',
-                'type' => SurveyQuestionType::Ranking,
-                'title' => 'Rank the national issues you want the next president to prioritize.',
-                'description' => 'Place the most urgent issue first.',
-                'is_required' => true,
-                'position' => 1,
-                'settings' => [],
-                'options' => [
-                    'Jobs and wages',
-                    'Food prices',
-                    'Anti-corruption',
-                    'Public healthcare',
-                    'West Philippine Sea policy',
-                ],
-            ],
-            [
-                'key' => 'approval',
-                'type' => SurveyQuestionType::YesNo,
-                'title' => 'Do you approve of the current national direction?',
-                'description' => null,
-                'is_required' => true,
-                'position' => 2,
-                'settings' => [],
-                'options' => [],
-            ],
-            [
-                'key' => 'location',
-                'type' => SurveyQuestionType::MultipleChoice,
-                'title' => 'Which part of the Philippines do you live in?',
-                'description' => 'This is used only for grouped sample reporting.',
-                'is_required' => false,
-                'position' => 3,
-                'settings' => [
-                    'allow_multiple' => false,
-                    'demographic_key' => 'location',
-                ],
-                'options' => [
-                    'National Capital Region',
-                    'North Luzon',
-                    'South Luzon',
-                    'Visayas',
-                    'Mindanao',
-                ],
-            ],
-            [
-                'key' => 'age_range',
-                'type' => SurveyQuestionType::MultipleChoice,
-                'title' => 'What is your age range?',
-                'description' => null,
-                'is_required' => false,
-                'position' => 4,
-                'settings' => [
-                    'allow_multiple' => false,
-                    'demographic_key' => 'age_range',
-                ],
-                'options' => [
-                    '18-24',
-                    '25-34',
-                    '35-44',
-                    '45-54',
-                    '55 and above',
-                ],
-            ],
-            [
-                'key' => 'comment',
-                'type' => SurveyQuestionType::OpenEnded,
-                'title' => 'What is one concrete change you want from the next president?',
-                'description' => 'Short answers are fine.',
-                'is_required' => false,
-                'position' => 5,
-                'settings' => [],
-                'options' => [],
-            ],
-        ]);
+        $questions = $this->createSurveyWithCategories($survey);
 
-        foreach ($this->presidentialResponses() as $index => $responseData) {
-            $this->createResponse($survey, $questions, $responseData, $index);
-        }
-    }
-
-    protected function seedFoodResearchSurvey(User $owner): void
-    {
-        $survey = $owner->surveys()->create([
-            'title' => 'Philippine Food Research Study 2026',
-            'description' => 'A sample research survey about Filipino dishes, ingredient access, and priorities for documenting regional food traditions.',
-            'access_code_hash' => Hash::make('pagkain-2026'),
-            'access_code_ciphertext' => 'pagkain-2026',
-            'status' => SurveyStatus::Published,
-            'published_at' => now()->subDays(6),
-            'last_response_at' => now()->subHours(2),
-        ]);
-
-        $questions = $this->createQuestions($survey, [
-            [
-                'key' => 'dish',
-                'type' => SurveyQuestionType::MultipleChoice,
-                'title' => 'Which Filipino dish best represents home cooking for you?',
-                'description' => 'Choose the dish that feels most familiar at home.',
-                'is_required' => true,
-                'position' => 0,
-                'settings' => ['allow_multiple' => false],
-                'options' => [
-                    'Adobo',
-                    'Sinigang',
-                    'Tinola',
-                    'Kare-kare',
-                    'Laing',
-                ],
-            ],
-            [
-                'key' => 'frequency',
-                'type' => SurveyQuestionType::RatingScale,
-                'title' => 'How often do you eat regional Filipino dishes in a typical month?',
-                'description' => '1 means rarely and 5 means very often.',
-                'is_required' => true,
-                'position' => 1,
-                'settings' => [
-                    'min' => 1,
-                    'max' => 5,
-                    'min_label' => 'Rarely',
-                    'max_label' => 'Very often',
-                ],
-                'options' => [],
-            ],
-            [
-                'key' => 'ingredient',
-                'type' => SurveyQuestionType::OpenEnded,
-                'title' => 'Which ingredient is hardest to find or afford when cooking Filipino food?',
-                'description' => null,
-                'is_required' => false,
-                'position' => 2,
-                'settings' => [],
-                'options' => [],
-            ],
-            [
-                'key' => 'research_focus',
-                'type' => SurveyQuestionType::Ranking,
-                'title' => 'Rank the food research priorities you care about most.',
-                'description' => 'Put the highest-priority topic first.',
-                'is_required' => true,
-                'position' => 3,
-                'settings' => [],
-                'options' => [
-                    'Nutrition and health',
-                    'Ingredient affordability',
-                    'Regional preservation',
-                    'Food tourism potential',
-                    'Sustainable sourcing',
-                ],
-            ],
-            [
-                'key' => 'location',
-                'type' => SurveyQuestionType::MultipleChoice,
-                'title' => 'Where in the Philippines do you currently live?',
-                'description' => null,
-                'is_required' => false,
-                'position' => 4,
-                'settings' => [
-                    'allow_multiple' => false,
-                    'demographic_key' => 'location',
-                ],
-                'options' => [
-                    'National Capital Region',
-                    'Luzon outside NCR',
-                    'Visayas',
-                    'Mindanao',
-                ],
-            ],
-            [
-                'key' => 'age_range',
-                'type' => SurveyQuestionType::MultipleChoice,
-                'title' => 'What is your age range?',
-                'description' => null,
-                'is_required' => false,
-                'position' => 5,
-                'settings' => [
-                    'allow_multiple' => false,
-                    'demographic_key' => 'age_range',
-                ],
-                'options' => [
-                    '18-24',
-                    '25-34',
-                    '35-44',
-                    '45-54',
-                    '55 and above',
-                ],
-            ],
-        ]);
-
-        foreach ($this->foodResearchResponses() as $index => $responseData) {
+        foreach ($this->generateResponses($questions, 52) as $index => $responseData) {
             $this->createResponse($survey, $questions, $responseData, $index);
         }
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $definitions
      * @return array<string, SurveyQuestion>
      */
-    protected function createQuestions(Survey $survey, array $definitions): array
+    protected function createSurveyWithCategories(Survey $survey): array
     {
+        $definitions = [
+            [
+                'category' => [
+                    'name' => 'Presidency 2028 in the Philippines',
+                    'description' => 'Leadership readiness, anti-corruption reforms, and demographic profile of respondents.',
+                    'position' => 0,
+                ],
+                'questions' => [
+                    [
+                        'key' => 'president_profile',
+                        'type' => SurveyQuestionType::MultipleChoice,
+                        'title' => 'Who are you most likely to support for president in 2028 if these names run?',
+                        'description' => 'Choose one based on current public visibility and reform credibility.',
+                        'is_required' => true,
+                        'position' => 0,
+                        'settings' => ['allow_multiple' => false],
+                        'options' => [
+                            'Risa Hontiveros (Akbayan)',
+                            'Sara Duterte (Hugpong ng Pagbabago)',
+                            'Imee Marcos (Nacionalista Party)',
+                            'Bam Aquino (Liberal Party / reform bloc)',
+                            'Undecided',
+                        ],
+                    ],
+                    [
+                        'key' => 'trust_reform_slate',
+                        'type' => SurveyQuestionType::RatingScale,
+                        'title' => 'How confident are you that a reform-focused slate can reduce corruption by 2028?',
+                        'description' => '1 means very low confidence, 5 means very high confidence.',
+                        'is_required' => true,
+                        'position' => 1,
+                        'settings' => [
+                            'min' => 1,
+                            'max' => 5,
+                            'min_label' => 'Very low confidence',
+                            'max_label' => 'Very high confidence',
+                        ],
+                        'options' => [],
+                    ],
+                    [
+                        'key' => 'location',
+                        'type' => SurveyQuestionType::OpenEnded,
+                        'title' => 'Where do you currently live?',
+                        'description' => 'Share your city, province, region, or country.',
+                        'is_required' => false,
+                        'position' => 2,
+                        'settings' => [
+                            'demographic_key' => 'location',
+                        ],
+                        'options' => [],
+                    ],
+                    [
+                        'key' => 'age_range',
+                        'type' => SurveyQuestionType::MultipleChoice,
+                        'title' => 'What is your age range?',
+                        'description' => 'Demographic grouping for trend breakdowns.',
+                        'is_required' => false,
+                        'position' => 3,
+                        'settings' => [
+                            'allow_multiple' => false,
+                            'demographic_key' => 'age_range',
+                        ],
+                        'options' => [
+                            '18-24',
+                            '25-34',
+                            '35-44',
+                            '45-54',
+                            '55+',
+                            'Prefer not to say',
+                        ],
+                    ],
+                    [
+                        'key' => 'presidency_reform_comment',
+                        'type' => SurveyQuestionType::OpenEnded,
+                        'title' => 'What anti-corruption reform should the next president prioritize first?',
+                        'description' => null,
+                        'is_required' => true,
+                        'position' => 4,
+                        'settings' => [],
+                        'options' => [],
+                    ],
+                ],
+            ],
+            [
+                'category' => [
+                    'name' => 'Flood control funds issue in the Philippines',
+                    'description' => 'Public priorities on flood resilience spending, oversight, and transparency.',
+                    'position' => 1,
+                ],
+                'questions' => [
+                    [
+                        'key' => 'flood_funds_confidence',
+                        'type' => SurveyQuestionType::RatingScale,
+                        'title' => 'How much do you trust flood-control spending after reports that 15 contractors cornered around P100B?',
+                        'description' => '1 means no trust, 5 means full trust.',
+                        'is_required' => true,
+                        'position' => 5,
+                        'settings' => [
+                            'min' => 1,
+                            'max' => 5,
+                            'min_label' => 'No trust',
+                            'max_label' => 'Full trust',
+                        ],
+                        'options' => [],
+                    ],
+                    [
+                        'key' => 'flood_audit_support',
+                        'type' => SurveyQuestionType::YesNo,
+                        'title' => 'Should all DPWH flood-control projects publish machine-readable quarterly audits (budget, contractor, progress, geo-tag)?',
+                        'description' => null,
+                        'is_required' => true,
+                        'position' => 6,
+                        'settings' => [],
+                        'options' => [],
+                    ],
+                    [
+                        'key' => 'flood_priority_rank',
+                        'type' => SurveyQuestionType::Ranking,
+                        'title' => 'Rank which flood-governance issue should be fixed first nationwide.',
+                        'description' => 'Rank from most urgent to least urgent.',
+                        'is_required' => true,
+                        'position' => 7,
+                        'settings' => [],
+                        'options' => [
+                            'Independent audit of projects tagged as ghost or substandard',
+                            'Public release of all contractor-level flood-control contracts',
+                            'Priority funding for repeatedly flooded LGUs',
+                            'Drainage and river desiltation in high-risk districts',
+                            'Community-based early warning and evacuation planning',
+                        ],
+                    ],
+                    [
+                        'key' => 'flood_reallocation',
+                        'type' => SurveyQuestionType::MultipleChoice,
+                        'title' => 'If funds similar to the vetoed P16.7B flood-control insertions are recovered, where should they go first?',
+                        'description' => null,
+                        'is_required' => true,
+                        'position' => 8,
+                        'settings' => ['allow_multiple' => false],
+                        'options' => [
+                            'Barangay-level flood mitigation and pumping stations',
+                            'School and health facility resilience upgrades',
+                            'Rescue boats, early warning systems, and evacuation centers',
+                            'Independent anti-corruption monitoring and prosecution support',
+                        ],
+                    ],
+                    [
+                        'key' => 'flood_comment',
+                        'type' => SurveyQuestionType::OpenEnded,
+                        'title' => 'What is one policy change that would improve flood fund accountability?',
+                        'description' => null,
+                        'is_required' => true,
+                        'position' => 9,
+                        'settings' => [],
+                        'options' => [],
+                    ],
+                ],
+            ],
+            [
+                'category' => [
+                    'name' => 'Uncontrolled oil price hike',
+                    'description' => 'Sentiment on fuel costs, economic strain, and policy responses.',
+                    'position' => 2,
+                ],
+                'questions' => [
+                    [
+                        'key' => 'oil_impact_rating',
+                        'type' => SurveyQuestionType::RatingScale,
+                        'title' => 'How severe is the impact of current oil-price spikes on your household budget?',
+                        'description' => '1 means manageable, 5 means severe.',
+                        'is_required' => true,
+                        'position' => 10,
+                        'settings' => [
+                            'min' => 1,
+                            'max' => 5,
+                            'min_label' => 'Manageable',
+                            'max_label' => 'Severe',
+                        ],
+                        'options' => [],
+                    ],
+                    [
+                        'key' => 'oil_policy_priority',
+                        'type' => SurveyQuestionType::MultipleChoice,
+                        'title' => 'With oil disruption risks around the Strait of Hormuz, which policy should be prioritized first?',
+                        'description' => null,
+                        'is_required' => true,
+                        'position' => 11,
+                        'settings' => ['allow_multiple' => false],
+                        'options' => [
+                            'Targeted fuel and food subsidies for low-income commuters',
+                            'Temporary suspension or reduction of fuel excise taxes',
+                            'Accelerated renewables, grid upgrades, and mass transit expansion',
+                            'No intervention',
+                        ],
+                    ],
+                    [
+                        'key' => 'oil_planning_yes_no',
+                        'type' => SurveyQuestionType::YesNo,
+                        'title' => 'Do you agree weak long-term energy planning worsened fuel inflation despite available global warning signals?',
+                        'description' => null,
+                        'is_required' => true,
+                        'position' => 12,
+                        'settings' => [],
+                        'options' => [],
+                    ],
+                    [
+                        'key' => 'oil_reform_rank',
+                        'type' => SurveyQuestionType::Ranking,
+                        'title' => 'Rank reforms to reduce future pump-price shocks (NCR benchmarks recently showed diesel around P133/L and RON91 around P91/L).',
+                        'description' => 'Rank from highest to lowest priority.',
+                        'is_required' => true,
+                        'position' => 13,
+                        'settings' => [],
+                        'options' => [
+                            'Expand renewable energy capacity',
+                            'Modernize public transportation',
+                            'Strategic fuel reserve planning',
+                            'Transparent fuel pricing oversight',
+                            'Anti-cartel enforcement',
+                        ],
+                    ],
+                    [
+                        'key' => 'oil_comment',
+                        'type' => SurveyQuestionType::OpenEnded,
+                        'title' => 'What concrete action should government take in the next 12 months to protect commuters?',
+                        'description' => null,
+                        'is_required' => true,
+                        'position' => 14,
+                        'settings' => [],
+                        'options' => [],
+                    ],
+                ],
+            ],
+        ];
+
         $questions = [];
 
         foreach ($definitions as $definition) {
-            $question = $survey->questions()->create([
-                'type' => $definition['type'],
-                'title' => $definition['title'],
-                'description' => $definition['description'],
-                'is_required' => $definition['is_required'],
-                'position' => $definition['position'],
-                'settings' => $definition['settings'],
-            ]);
+            $category = $survey->categories()->create($definition['category']);
 
-            foreach ($definition['options'] as $position => $label) {
-                $question->options()->create([
-                    'label' => $label,
-                    'position' => $position,
+            foreach ($definition['questions'] as $questionDefinition) {
+                $question = $survey->questions()->create([
+                    'survey_category_id' => $category->id,
+                    'type' => $questionDefinition['type'],
+                    'title' => $questionDefinition['title'],
+                    'description' => $questionDefinition['description'],
+                    'is_required' => $questionDefinition['is_required'],
+                    'position' => $questionDefinition['position'],
+                    'settings' => $questionDefinition['settings'],
                 ]);
-            }
 
-            $questions[$definition['key']] = $question->fresh('options');
+                foreach ($questionDefinition['options'] as $position => $label) {
+                    $question->options()->create([
+                        'label' => $label,
+                        'position' => $position,
+                    ]);
+                }
+
+                $questions[$questionDefinition['key']] = $question->fresh('options');
+            }
         }
 
         return $questions;
+    }
+
+    /**
+     * @param  array<string, SurveyQuestion>  $questions
+     * @return array<int, array<string, mixed>>
+     */
+    protected function generateResponses(array $questions, int $count): array
+    {
+        $locationPool = array_values(array_merge(
+            array_fill(0, 41, 'Batangas'),
+            array_fill(0, 9, 'Naga'),
+            array_fill(0, 2, 'Quezon'),
+        ));
+
+        $youngRespondentsCount = (int) floor($count * 0.8);
+        $ageRangePool = array_values(array_merge(
+            array_fill(0, $youngRespondentsCount, '18-24'),
+            array_fill(0, $count - $youngRespondentsCount, '25-34'),
+        ));
+
+        $openEndedBuckets = [
+            'presidency_reform_comment' => [
+                'Pass a strict FOI law and require real-time disclosure of campaign donors and major contracts.',
+                'Create an independent anti-corruption court with strict deadlines for graft and procurement cases.',
+                'Enforce anti-dynasty and campaign-finance rules with full digital transparency.',
+                'Protect whistleblowers and investigative journalists who report corruption networks.',
+            ],
+            'flood_comment' => [
+                'Publish geotagged monthly progress for all DPWH flood-control projects and contractor variation orders.',
+                'Require third-party engineering and COA-style performance audits before any project is marked complete.',
+                'Blacklist contractors linked to ghost or repeatedly defective flood-control works.',
+                'Create citizen oversight boards in flood-prone provinces to monitor implementation quality.',
+            ],
+            'oil_comment' => [
+                'Scale up mass transit and electric public transport so commuters are less exposed to oil shocks.',
+                'Deploy targeted fuel relief for public utility drivers and low-income commuters during spikes.',
+                'Build a transparent strategic fuel reserve program with quarterly public reporting.',
+                'Accelerate renewable and grid projects to reduce import dependence on volatile oil markets.',
+            ],
+        ];
+
+        $responses = [];
+        $bamSupportersCount = (int) round($count * 0.9);
+
+        for ($index = 0; $index < $count; $index++) {
+            $response = [
+                'profile' => sprintf('Philippines respondent %d', $index + 1),
+                'location' => $locationPool[$index],
+                'age_range' => $ageRangePool[$index],
+                'president_profile' => $index < $bamSupportersCount
+                    ? 'Bam Aquino (Liberal Party / reform bloc)'
+                    : 'Risa Hontiveros (Akbayan)',
+                'trust_reform_slate' => $index % 5 === 0 ? 4 : 5,
+                'flood_funds_confidence' => $index % 6 === 0 ? 2 : 1,
+                'flood_audit_support' => true,
+                'flood_priority_rank' => [
+                    'Independent audit of projects tagged as ghost or substandard',
+                    'Public release of all contractor-level flood-control contracts',
+                    'Drainage and river desiltation in high-risk districts',
+                    'Community-based early warning and evacuation planning',
+                    'Priority funding for repeatedly flooded LGUs',
+                ],
+                'flood_reallocation' => 'Independent anti-corruption monitoring and prosecution support',
+                'oil_impact_rating' => $index % 4 === 0 ? 4 : 5,
+                'oil_policy_priority' => $index % 3 === 0
+                    ? 'Accelerated renewables, grid upgrades, and mass transit expansion'
+                    : 'Targeted fuel and food subsidies for low-income commuters',
+                'oil_planning_yes_no' => true,
+                'oil_reform_rank' => [
+                    'Transparent fuel pricing oversight',
+                    'Expand renewable energy capacity',
+                    'Modernize public transportation',
+                    'Strategic fuel reserve planning',
+                    'Anti-cartel enforcement',
+                ],
+            ];
+
+            foreach ($openEndedBuckets as $key => $bucket) {
+                $response[$key] = $bucket[$index % count($bucket)];
+            }
+
+            foreach ($questions as $key => $question) {
+                if ($question->type === SurveyQuestionType::MultipleChoice && ! array_key_exists($key, $response)) {
+                    $options = $question->options->pluck('label')->values()->all();
+                    $response[$key] = $options[$index % count($options)];
+                }
+
+                if ($question->type === SurveyQuestionType::Ranking && ! array_key_exists($key, $response)) {
+                    $options = $question->options->pluck('label')->values()->all();
+                    $shift = $index % count($options);
+
+                    $response[$key] = array_values(array_merge(
+                        array_slice($options, $shift),
+                        array_slice($options, 0, $shift),
+                    ));
+                }
+            }
+
+            $responses[] = $response;
+        }
+
+        return $responses;
     }
 
     /**
@@ -301,8 +426,8 @@ class ExampleSurveySeeder extends Seeder
     {
         $response = $survey->responses()->create([
             'is_completed' => true,
-            'access_code_verified_at' => now()->subHours(24 - $index),
-            'submitted_at' => now()->subHours(24 - $index),
+            'access_code_verified_at' => now()->subHours(100 - $index),
+            'submitted_at' => now()->subHours(100 - $index),
             'metadata' => [
                 'seeded' => true,
                 'profile' => $responseData['profile'],
@@ -337,7 +462,7 @@ class ExampleSurveySeeder extends Seeder
                         'option_ids' => $question->options
                             ->whereIn('label', $selectedLabels)
                             ->pluck('id')
-                            ->map(fn ($id): int => (int) $id)
+                            ->map(fn($id): int => (int) $id)
                             ->values()
                             ->all(),
                     ];
@@ -348,7 +473,7 @@ class ExampleSurveySeeder extends Seeder
                 case SurveyQuestionType::Ranking:
                     $payload['json_value'] = [
                         'ranked_option_ids' => collect($value)
-                            ->map(fn (string $label): int => (int) $question->options->firstWhere('label', $label)?->id)
+                            ->map(fn(string $label): int => (int) $question->options->firstWhere('label', $label)?->id)
                             ->filter()
                             ->values()
                             ->all(),
@@ -360,221 +485,5 @@ class ExampleSurveySeeder extends Seeder
         }
 
         $survey->forceFill(['last_response_at' => $response->submitted_at])->save();
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    protected function presidentialResponses(): array
-    {
-        return [
-            [
-                'profile' => 'Quezon City commuter, 26',
-                'candidate' => 'Alicia Mercado',
-                'priority' => ['Food prices', 'Jobs and wages', 'Public healthcare', 'Anti-corruption', 'West Philippine Sea policy'],
-                'approval' => false,
-                'location' => 'National Capital Region',
-                'age_range' => '25-34',
-                'comment' => 'Lower rice prices and more stable commute policies.',
-            ],
-            [
-                'profile' => 'Cebu small business owner, 41',
-                'candidate' => 'Ramon de la Cruz',
-                'priority' => ['Jobs and wages', 'Food prices', 'Anti-corruption', 'Public healthcare', 'West Philippine Sea policy'],
-                'approval' => true,
-                'location' => 'Visayas',
-                'age_range' => '35-44',
-                'comment' => 'Support small enterprises outside Metro Manila.',
-            ],
-            [
-                'profile' => 'Davao teacher, 33',
-                'candidate' => 'Teresa Valdez',
-                'priority' => ['Public healthcare', 'Jobs and wages', 'Food prices', 'Anti-corruption', 'West Philippine Sea policy'],
-                'approval' => true,
-                'location' => 'Mindanao',
-                'age_range' => '25-34',
-                'comment' => 'Public schools and rural clinics need more support.',
-            ],
-            [
-                'profile' => 'Baguio first-time voter, 21',
-                'candidate' => 'Undecided',
-                'priority' => ['Jobs and wages', 'Anti-corruption', 'Food prices', 'Public healthcare', 'West Philippine Sea policy'],
-                'approval' => false,
-                'location' => 'North Luzon',
-                'age_range' => '18-24',
-                'comment' => 'I want a clearer plan for youth employment.',
-            ],
-            [
-                'profile' => 'Laguna factory supervisor, 38',
-                'candidate' => 'Alicia Mercado',
-                'priority' => ['Food prices', 'Jobs and wages', 'Anti-corruption', 'Public healthcare', 'West Philippine Sea policy'],
-                'approval' => false,
-                'location' => 'South Luzon',
-                'age_range' => '35-44',
-                'comment' => 'Everyday grocery prices matter more than slogans.',
-            ],
-            [
-                'profile' => 'Iloilo nurse, 29',
-                'candidate' => 'Teresa Valdez',
-                'priority' => ['Public healthcare', 'Food prices', 'Jobs and wages', 'Anti-corruption', 'West Philippine Sea policy'],
-                'approval' => true,
-                'location' => 'Visayas',
-                'age_range' => '25-34',
-                'comment' => 'Hospitals outside the capital need better staffing.',
-            ],
-            [
-                'profile' => 'Cagayan farmer, 54',
-                'candidate' => 'Ramon de la Cruz',
-                'priority' => ['Food prices', 'Jobs and wages', 'West Philippine Sea policy', 'Anti-corruption', 'Public healthcare'],
-                'approval' => true,
-                'location' => 'North Luzon',
-                'age_range' => '45-54',
-                'comment' => 'Farm inputs should be more affordable and predictable.',
-            ],
-            [
-                'profile' => 'General Santos fisherfolk family member, 47',
-                'candidate' => 'Alicia Mercado',
-                'priority' => ['West Philippine Sea policy', 'Food prices', 'Jobs and wages', 'Anti-corruption', 'Public healthcare'],
-                'approval' => false,
-                'location' => 'Mindanao',
-                'age_range' => '45-54',
-                'comment' => 'Protect fishing livelihoods and keep fuel affordable.',
-            ],
-            [
-                'profile' => 'Pasig BPO worker, 31',
-                'candidate' => 'Alicia Mercado',
-                'priority' => ['Jobs and wages', 'Food prices', 'Anti-corruption', 'Public healthcare', 'West Philippine Sea policy'],
-                'approval' => false,
-                'location' => 'National Capital Region',
-                'age_range' => '25-34',
-                'comment' => 'Wages should catch up with rent and transport costs.',
-            ],
-            [
-                'profile' => 'Batangas jeepney operator, 52',
-                'candidate' => 'Ramon de la Cruz',
-                'priority' => ['Food prices', 'Jobs and wages', 'Public healthcare', 'Anti-corruption', 'West Philippine Sea policy'],
-                'approval' => true,
-                'location' => 'South Luzon',
-                'age_range' => '45-54',
-                'comment' => 'Transport workers need a realistic modernization plan.',
-            ],
-            [
-                'profile' => 'Tacloban university staff, 36',
-                'candidate' => 'Teresa Valdez',
-                'priority' => ['Anti-corruption', 'Public healthcare', 'Jobs and wages', 'Food prices', 'West Philippine Sea policy'],
-                'approval' => false,
-                'location' => 'Visayas',
-                'age_range' => '35-44',
-                'comment' => 'Less corruption would make every other program work better.',
-            ],
-            [
-                'profile' => 'Marawi community organizer, 58',
-                'candidate' => 'Undecided',
-                'priority' => ['Public healthcare', 'Jobs and wages', 'Food prices', 'West Philippine Sea policy', 'Anti-corruption'],
-                'approval' => true,
-                'location' => 'Mindanao',
-                'age_range' => '55 and above',
-                'comment' => 'Communities outside major cities need consistent support.',
-            ],
-        ];
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    protected function foodResearchResponses(): array
-    {
-        return [
-            [
-                'profile' => 'Manila home cook, 24',
-                'dish' => 'Sinigang',
-                'frequency' => 4,
-                'ingredient' => 'Tamarind when fresh fruit prices rise.',
-                'research_focus' => ['Ingredient affordability', 'Nutrition and health', 'Regional preservation', 'Sustainable sourcing', 'Food tourism potential'],
-                'location' => 'National Capital Region',
-                'age_range' => '18-24',
-            ],
-            [
-                'profile' => 'Pampanga caterer, 39',
-                'dish' => 'Kare-kare',
-                'frequency' => 5,
-                'ingredient' => 'Peanut and annatto quality varies too much.',
-                'research_focus' => ['Regional preservation', 'Ingredient affordability', 'Food tourism potential', 'Nutrition and health', 'Sustainable sourcing'],
-                'location' => 'Luzon outside NCR',
-                'age_range' => '35-44',
-            ],
-            [
-                'profile' => 'Cebu office worker, 28',
-                'dish' => 'Adobo',
-                'frequency' => 3,
-                'ingredient' => 'Coconut vinegar costs more than before.',
-                'research_focus' => ['Ingredient affordability', 'Sustainable sourcing', 'Nutrition and health', 'Regional preservation', 'Food tourism potential'],
-                'location' => 'Visayas',
-                'age_range' => '25-34',
-            ],
-            [
-                'profile' => 'Davao market vendor, 44',
-                'dish' => 'Tinola',
-                'frequency' => 4,
-                'ingredient' => 'Native chicken is harder to source consistently.',
-                'research_focus' => ['Ingredient affordability', 'Regional preservation', 'Sustainable sourcing', 'Nutrition and health', 'Food tourism potential'],
-                'location' => 'Mindanao',
-                'age_range' => '35-44',
-            ],
-            [
-                'profile' => 'Bacolod culinary student, 22',
-                'dish' => 'Adobo',
-                'frequency' => 4,
-                'ingredient' => 'Good local vinegar for class projects.',
-                'research_focus' => ['Regional preservation', 'Food tourism potential', 'Nutrition and health', 'Ingredient affordability', 'Sustainable sourcing'],
-                'location' => 'Visayas',
-                'age_range' => '18-24',
-            ],
-            [
-                'profile' => 'Quezon province parent, 48',
-                'dish' => 'Sinigang',
-                'frequency' => 5,
-                'ingredient' => 'Fresh vegetables during storm season.',
-                'research_focus' => ['Ingredient affordability', 'Nutrition and health', 'Sustainable sourcing', 'Regional preservation', 'Food tourism potential'],
-                'location' => 'Luzon outside NCR',
-                'age_range' => '45-54',
-            ],
-            [
-                'profile' => 'Makati restaurant manager, 34',
-                'dish' => 'Kare-kare',
-                'frequency' => 3,
-                'ingredient' => 'Oxtail is expensive for small restaurant testing.',
-                'research_focus' => ['Ingredient affordability', 'Food tourism potential', 'Regional preservation', 'Nutrition and health', 'Sustainable sourcing'],
-                'location' => 'National Capital Region',
-                'age_range' => '25-34',
-            ],
-            [
-                'profile' => 'Bicol teacher, 40',
-                'dish' => 'Laing',
-                'frequency' => 4,
-                'ingredient' => 'Quality gabi leaves during the rainy months.',
-                'research_focus' => ['Regional preservation', 'Ingredient affordability', 'Nutrition and health', 'Sustainable sourcing', 'Food tourism potential'],
-                'location' => 'Luzon outside NCR',
-                'age_range' => '35-44',
-            ],
-            [
-                'profile' => 'Iligan engineer, 31',
-                'dish' => 'Tinola',
-                'frequency' => 2,
-                'ingredient' => 'Ginger prices spike too often.',
-                'research_focus' => ['Ingredient affordability', 'Sustainable sourcing', 'Nutrition and health', 'Food tourism potential', 'Regional preservation'],
-                'location' => 'Mindanao',
-                'age_range' => '25-34',
-            ],
-            [
-                'profile' => 'Taguig graduate student, 27',
-                'dish' => 'Adobo',
-                'frequency' => 3,
-                'ingredient' => 'Locally produced soy sauce with consistent quality.',
-                'research_focus' => ['Nutrition and health', 'Ingredient affordability', 'Regional preservation', 'Sustainable sourcing', 'Food tourism potential'],
-                'location' => 'National Capital Region',
-                'age_range' => '25-34',
-            ],
-        ];
     }
 }

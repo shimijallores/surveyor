@@ -108,6 +108,23 @@ const nonDemographicQuestions = computed(() =>
     props.analytics.questions.filter((question) => !question.demographic_key),
 );
 
+const nonDemographicByCategory = computed(() => {
+    const grouped = new Map<string, typeof nonDemographicQuestions.value>();
+
+    for (const question of nonDemographicQuestions.value) {
+        const label = question.category_name ?? 'General';
+        const current = grouped.get(label) ?? [];
+
+        current.push(question);
+        grouped.set(label, current);
+    }
+
+    return Array.from(grouped.entries()).map(([label, questions]) => ({
+        label,
+        questions,
+    }));
+});
+
 const copyLink = async (): Promise<void> => {
     if (!shareUrl.value) {
         return;
@@ -388,7 +405,7 @@ const destroy = (): void => {
                             <div
                                 v-for="segment in questionResponseSegments"
                                 :key="segment.label"
-                                class="flex items-center justify-between gap-3 rounded-[1rem] border border-border bg-background px-4 py-3"
+                                class="flex max-w-full items-center justify-between gap-3 overflow-hidden rounded-2xl border border-border bg-background px-4 py-3 wrap-normal"
                             >
                                 <div class="min-w-0">
                                     <p
@@ -410,7 +427,7 @@ const destroy = (): void => {
 
                         <div
                             v-else
-                            class="rounded-[1rem] border border-dashed border-border bg-background px-4 py-6 text-sm text-muted-foreground"
+                            class="rounded-2xl border border-dashed border-border bg-background px-4 py-6 text-sm text-muted-foreground"
                         >
                             Each question will show its response volume here
                             once submissions arrive.
@@ -449,19 +466,29 @@ const destroy = (): void => {
                         <h2 class="text-2xl font-semibold tracking-tight">
                             Per-question analytics
                         </h2>
-                        <p class="text-sm text-muted-foreground">
-                            Every prompt now includes a chart or graph where the
-                            response shape supports it.
-                        </p>
                     </div>
                 </div>
 
-                <div class="grid gap-5">
-                    <SurveyAnalyticsCard
-                        v-for="question in nonDemographicQuestions"
-                        :key="question.question_id"
-                        :question="question"
-                    />
+                <div class="space-y-6">
+                    <section
+                        v-for="group in nonDemographicByCategory"
+                        :key="group.label"
+                        class="space-y-4"
+                    >
+                        <h3
+                            class="text-xs tracking-[0.22em] text-muted-foreground uppercase"
+                        >
+                            {{ group.label }}
+                        </h3>
+
+                        <div class="grid gap-5">
+                            <SurveyAnalyticsCard
+                                v-for="question in group.questions"
+                                :key="question.question_id"
+                                :question="question"
+                            />
+                        </div>
+                    </section>
                 </div>
             </section>
 

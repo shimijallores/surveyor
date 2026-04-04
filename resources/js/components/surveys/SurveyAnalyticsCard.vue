@@ -74,6 +74,13 @@ const demographicLabel = (question: SurveyAnalyticsQuestion): string | null => {
 
                 <div class="flex flex-wrap items-center justify-end gap-2">
                     <Badge
+                        v-if="question.category_name"
+                        variant="outline"
+                        class="rounded-full"
+                    >
+                        {{ question.category_name }}
+                    </Badge>
+                    <Badge
                         v-if="demographicLabel(question)"
                         variant="outline"
                         class="rounded-full"
