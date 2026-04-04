@@ -67,6 +67,7 @@ const demographicPresetQuestions = (): SurveyQuestion[] => [
             "Ask for the respondent's city, province, region, or country.",
         is_required: false,
         position: 0,
+        category_client_key: null,
         settings: {
             demographic_key: 'location',
             allow_multiple: false,
@@ -85,6 +86,7 @@ const demographicPresetQuestions = (): SurveyQuestion[] => [
             'Use a standard set of age brackets for clearer reporting.',
         is_required: false,
         position: 1,
+        category_client_key: null,
         settings: {
             demographic_key: 'age_range',
             allow_multiple: false,
@@ -626,7 +628,13 @@ const submit = (): void => {
                                     >
                                     <Input
                                         :id="`category-description-${categoryIndex}`"
-                                        v-model="category.description"
+                                        :model-value="
+                                            category.description ?? ''
+                                        "
+                                        @update:model-value="
+                                            category.description =
+                                                String($event)
+                                        "
                                         placeholder="Optional category context"
                                     />
                                 </div>
@@ -1113,7 +1121,7 @@ const submit = (): void => {
                                 </div>
 
                                 <div
-                                    class="grid [grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))] gap-3"
+                                    class="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-3"
                                 >
                                     <Button
                                         v-for="type in questionTypes"
