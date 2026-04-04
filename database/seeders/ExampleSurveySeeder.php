@@ -462,7 +462,7 @@ class ExampleSurveySeeder extends Seeder
                         'option_ids' => $question->options
                             ->whereIn('label', $selectedLabels)
                             ->pluck('id')
-                            ->map(fn($id): int => (int) $id)
+                            ->map(fn ($id): int => (int) $id)
                             ->values()
                             ->all(),
                     ];
@@ -473,7 +473,7 @@ class ExampleSurveySeeder extends Seeder
                 case SurveyQuestionType::Ranking:
                     $payload['json_value'] = [
                         'ranked_option_ids' => collect($value)
-                            ->map(fn(string $label): int => (int) $question->options->firstWhere('label', $label)?->id)
+                            ->map(fn (string $label): int => (int) $question->options->firstWhere('label', $label)?->id)
                             ->filter()
                             ->values()
                             ->all(),

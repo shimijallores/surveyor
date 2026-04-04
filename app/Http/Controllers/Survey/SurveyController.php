@@ -231,7 +231,7 @@ class SurveyController extends Controller
                 collect($questionData['options'] ?? [])
                     ->sortBy('position')
                     ->values()
-                    ->each(fn(array $optionData) => $question->options()->create([
+                    ->each(fn (array $optionData) => $question->options()->create([
                         'label' => $optionData['label'],
                         'position' => $optionData['position'],
                     ]));
@@ -245,7 +245,7 @@ class SurveyController extends Controller
             ->withCount([
                 'questions',
                 'responses',
-                'responses as completed_responses_count' => fn($query) => $query->where('is_completed', true),
+                'responses as completed_responses_count' => fn ($query) => $query->where('is_completed', true),
             ])
             ->latest('updated_at');
     }

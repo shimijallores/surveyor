@@ -24,7 +24,7 @@ class SurveyAnalyticsService
         $questions = $survey->questions
             ->sortBy('position')
             ->values()
-            ->map(fn(SurveyQuestion $question): array => $this->questionAnalytics($question));
+            ->map(fn (SurveyQuestion $question): array => $this->questionAnalytics($question));
 
         $responses = $survey->responses;
         $completedResponses = $responses->where('is_completed', true);
@@ -38,7 +38,7 @@ class SurveyAnalyticsService
                     ? 0
                     : (int) round(($completedResponses->count() / $responses->count()) * 100),
                 'question_response_segments' => $questions
-                    ->map(fn(array $question): array => [
+                    ->map(fn (array $question): array => [
                         'label' => $question['title'],
                         'count' => $question['response_count'],
                         'percentage' => $responses->isEmpty()
@@ -49,11 +49,11 @@ class SurveyAnalyticsService
                 'category_response_segments' => $survey->categories
                     ->sortBy('position')
                     ->values()
-                    ->map(fn($category): array => [
+                    ->map(fn ($category): array => [
                         'label' => $category->name,
                         'count' => $survey->questions
                             ->where('survey_category_id', $category->id)
-                            ->sum(fn(SurveyQuestion $question): int => $question->answers->count()),
+                            ->sum(fn (SurveyQuestion $question): int => $question->answers->count()),
                     ])
                     ->all(),
             ],
@@ -87,7 +87,7 @@ class SurveyAnalyticsService
         $total = array_sum($segments);
 
         return collect($segments)
-            ->map(fn(int $count, string $label): array => [
+            ->map(fn (int $count, string $label): array => [
                 'label' => $label,
                 'count' => $count,
                 'percentage' => $total === 0 ? 0 : (int) round(($count / $total) * 100),
@@ -118,20 +118,20 @@ class SurveyAnalyticsService
         $answers = $question->answers()
             ->whereNotNull('text_value')
             ->pluck('text_value')
-            ->map(static fn(string $value): string => trim($value))
+            ->map(static fn (string $value): string => trim($value))
             ->filter()
             ->values();
 
         $segments = $answers
-            ->groupBy(static fn(string $value): string => mb_strtolower($value))
-            ->map(fn($group): array => [
+            ->groupBy(static fn (string $value): string => mb_strtolower($value))
+            ->map(fn ($group): array => [
                 'label' => $group->first(),
                 'count' => $group->count(),
             ])
             ->sortByDesc('count')
             ->values()
             ->take(6)
-            ->map(fn(array $segment): array => [
+            ->map(fn (array $segment): array => [
                 ...$segment,
                 'percentage' => $answers->isEmpty()
                     ? 0
@@ -194,15 +194,15 @@ class SurveyAnalyticsService
     {
         $ratings = $question->answers
             ->pluck('numeric_value')
-            ->filter(static fn($value): bool => is_int($value))
+            ->filter(static fn ($value): bool => is_int($value))
             ->values();
 
         $min = (int) ($question->settings['min'] ?? 1);
         $max = (int) ($question->settings['max'] ?? 5);
 
         $segments = collect(range($min, $max))
-            ->mapWithKeys(fn(int $value): array => [
-                (string) $value => $ratings->filter(fn(int $rating): bool => $rating === $value)->count(),
+            ->mapWithKeys(fn (int $value): array => [
+                (string) $value => $ratings->filter(fn (int $rating): bool => $rating === $value)->count(),
             ]);
 
         return [

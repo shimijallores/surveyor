@@ -14,7 +14,7 @@ trait SurveyValidationRules
     protected function surveyRules(bool $accessCodeRequired = true): array
     {
         $questionTypes = array_map(
-            static fn(SurveyQuestionType $type): string => $type->value,
+            static fn (SurveyQuestionType $type): string => $type->value,
             SurveyQuestionType::cases(),
         );
 
@@ -58,7 +58,7 @@ trait SurveyValidationRules
                 $questions = $this->input('questions', []);
                 $categoryKeys = collect($categories)
                     ->pluck('client_key')
-                    ->filter(static fn(mixed $value): bool => is_string($value) && $value !== '')
+                    ->filter(static fn (mixed $value): bool => is_string($value) && $value !== '')
                     ->values();
 
                 if ($categoryKeys->count() !== $categoryKeys->unique()->count()) {

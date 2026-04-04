@@ -33,7 +33,7 @@ class SurveyBuilderResource extends JsonResource
             'categories' => $survey->categories
                 ->sortBy('position')
                 ->values()
-                ->map(fn($category): array => [
+                ->map(fn ($category): array => [
                     'id' => $category->id,
                     'name' => $category->name,
                     'description' => $category->description,
@@ -44,7 +44,7 @@ class SurveyBuilderResource extends JsonResource
             'questions' => $survey->questions
                 ->sortBy('position')
                 ->values()
-                ->map(fn($question): array => [
+                ->map(fn ($question): array => [
                     'id' => $question->id,
                     'type' => $question->type->value,
                     'title' => $question->title,
@@ -65,7 +65,7 @@ class SurveyBuilderResource extends JsonResource
                     'options' => $question->options
                         ->sortBy('position')
                         ->values()
-                        ->map(fn($option): array => [
+                        ->map(fn ($option): array => [
                             'id' => $option->id,
                             'label' => $option->label,
                             'position' => $option->position,
