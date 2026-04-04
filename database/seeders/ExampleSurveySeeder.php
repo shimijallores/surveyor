@@ -132,6 +132,31 @@ class ExampleSurveySeeder extends Seeder
                         'settings' => [],
                         'options' => [],
                     ],
+                    [
+                        'key' => 'anti_dynasty_support',
+                        'type' => SurveyQuestionType::YesNo,
+                        'title' => 'Should the next president push for passage of a strict anti-political dynasty law to prevent family members from holding successive offices?',
+                        'description' => null,
+                        'is_required' => true,
+                        'position' => 5,
+                        'settings' => [],
+                        'options' => [],
+                    ],
+                    [
+                        'key' => 'presidential_transparency_priority',
+                        'type' => SurveyQuestionType::MultipleChoice,
+                        'title' => 'Which presidential transparency measure is most important to prevent abuse of power during the 2028-2034 term?',
+                        'description' => null,
+                        'is_required' => true,
+                        'position' => 6,
+                        'settings' => ['allow_multiple' => false],
+                        'options' => [
+                            'Full disclosure of all presidential assets, loans, and business interests before taking office',
+                            'Public livestream of cabinet meetings and major presidential decisions with quarterly published reports',
+                            'Independent inspector general office reporting directly to Congress, not the president',
+                            'Mandatory lifestyle checks for all presidential appointees with asset reporting every 6 months',
+                        ],
+                    ],
                 ],
             ],
             [
@@ -389,6 +414,10 @@ class ExampleSurveySeeder extends Seeder
                     'Strategic fuel reserve planning',
                     'Anti-cartel enforcement',
                 ],
+                'anti_dynasty_support' => true,
+                'presidential_transparency_priority' => $index % 4 === 0
+                    ? 'Independent inspector general office reporting directly to Congress, not the president'
+                    : 'Full disclosure of all presidential assets, loans, and business interests before taking office',
             ];
 
             foreach ($openEndedBuckets as $key => $bucket) {
@@ -462,7 +491,7 @@ class ExampleSurveySeeder extends Seeder
                         'option_ids' => $question->options
                             ->whereIn('label', $selectedLabels)
                             ->pluck('id')
-                            ->map(fn ($id): int => (int) $id)
+                            ->map(fn($id): int => (int) $id)
                             ->values()
                             ->all(),
                     ];
@@ -473,7 +502,7 @@ class ExampleSurveySeeder extends Seeder
                 case SurveyQuestionType::Ranking:
                     $payload['json_value'] = [
                         'ranked_option_ids' => collect($value)
-                            ->map(fn (string $label): int => (int) $question->options->firstWhere('label', $label)?->id)
+                            ->map(fn(string $label): int => (int) $question->options->firstWhere('label', $label)?->id)
                             ->filter()
                             ->values()
                             ->all(),
