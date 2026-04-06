@@ -164,9 +164,9 @@ const ariaLabel = computed(() => {
 <template>
     <div v-if="hasData" class="space-y-4">
         <div
-            class="grid gap-4 rounded-[1rem] border border-border bg-background p-4 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] lg:items-start"
+            class="grid gap-4 rounded-2xl border border-border bg-background p-4 lg:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] lg:items-start"
         >
-            <div class="mx-auto h-[18rem] w-full max-w-[18rem] lg:mx-0">
+            <div class="mx-auto h-72 w-full max-w-[18rem] lg:mx-0">
                 <Pie
                     :data="chartData"
                     :options="chartOptions"
@@ -180,7 +180,7 @@ const ariaLabel = computed(() => {
                 <div
                     v-for="segment in normalizedSegments"
                     :key="segment.label"
-                    class="flex items-start justify-between gap-3 rounded-[1rem] border border-border bg-card px-4 py-3"
+                    class="flex items-start justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3"
                 >
                     <div class="min-w-0">
                         <p class="truncate text-sm font-medium text-foreground">
@@ -203,7 +203,7 @@ const ariaLabel = computed(() => {
 
     <div
         v-else
-        class="rounded-[1rem] border border-dashed border-border bg-background px-4 py-6 text-sm text-muted-foreground"
+        class="rounded-2xl border border-dashed border-border bg-background px-4 py-6 text-sm text-muted-foreground"
     >
         {{ emptyLabel }}
     </div>

@@ -177,7 +177,7 @@ const ariaLabel = computed(() => {
 
 <template>
     <div class="grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:items-center">
-        <div class="relative mx-auto h-56 w-full max-w-[14rem]">
+        <div class="relative mx-auto h-56 w-full max-w-56">
             <Doughnut
                 :data="chartData"
                 :options="chartOptions"
@@ -204,7 +204,7 @@ const ariaLabel = computed(() => {
             <div
                 v-for="segment in normalizedSegments"
                 :key="`legend-${segment.label}`"
-                class="flex items-center justify-between gap-3 rounded-[1rem] border border-border bg-background px-4 py-3"
+                class="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-3"
             >
                 <div class="flex min-w-0 items-center gap-3">
                     <span

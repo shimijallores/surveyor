@@ -53,7 +53,7 @@ const featureCards = [
     <main
         class="relative min-h-screen overflow-hidden bg-background text-foreground"
     >
-        <div class="absolute inset-x-0 top-0 h-1 bg-[var(--color-chart-2)]" />
+        <div class="absolute inset-x-0 top-0 h-1 bg-(--color-chart-2)" />
 
         <div
             class="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 py-5 sm:px-6 xl:max-w-[70vw] xl:px-0"
