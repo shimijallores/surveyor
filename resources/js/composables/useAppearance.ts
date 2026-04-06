@@ -53,7 +53,23 @@ const getStoredAppearance = () => {
         return null;
     }
 
-    return localStorage.getItem('appearance') as Appearance | null;
+    try {
+        return localStorage.getItem('appearance') as Appearance | null;
+    } catch {
+        return null;
+    }
+};
+
+const setStoredAppearance = (value: Appearance): void => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        localStorage.setItem('appearance', value);
+    } catch {
+        // Ignore write failures when storage is unavailable.
+    }
 };
 
 const prefersDark = (): boolean => {
@@ -80,16 +96,24 @@ export function initializeTheme(): void {
     updateTheme(savedAppearance || 'system');
 
     // Set up system theme change listener...
-    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    const themeMediaQuery = mediaQuery();
+
+    if (!themeMediaQuery) {
+        return;
+    }
+
+    if (typeof themeMediaQuery.addEventListener === 'function') {
+        themeMediaQuery.addEventListener('change', handleSystemThemeChange);
+    } else {
+        themeMediaQuery.addListener(handleSystemThemeChange);
+    }
 }
 
 const appearance = ref<Appearance>('system');
 
 export function useAppearance(): UseAppearanceReturn {
     onMounted(() => {
-        const savedAppearance = localStorage.getItem(
-            'appearance',
-        ) as Appearance | null;
+        const savedAppearance = getStoredAppearance();
 
         if (savedAppearance) {
             appearance.value = savedAppearance;
@@ -108,7 +132,7 @@ export function useAppearance(): UseAppearanceReturn {
         appearance.value = value;
 
         // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', value);
+        setStoredAppearance(value);
 
         // Store in cookie for SSR...
         setCookie('appearance', value);

@@ -82,12 +82,12 @@ const completionSegments = computed(() => {
         {
             label: 'Completed',
             value: props.analytics.summary.completed_count,
-            color: 'var(--color-chart-2)',
+            color: 'rgb(0 146 74)',
         },
         {
             label: 'Unfinished',
             value: unfinished,
-            color: 'var(--color-chart-4)',
+            color: 'rgb(200 30 80)',
         },
     ];
 });

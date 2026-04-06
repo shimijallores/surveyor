@@ -33,11 +33,14 @@ const cssColor = (name: string, fallback: string): string => {
 };
 
 const palette = computed(() => [
-    cssColor('--foreground', '#2f3640'),
-    cssColor('--muted-foreground', '#68707a'),
-    cssColor('--border', '#b8b0a8'),
-    '#9a938b',
-    '#c7c1ba',
+    'rgb(200 30 80)',
+    'rgb(0 115 207)',
+    'rgb(216 150 0)',
+    'rgb(0 140 135)',
+    'rgb(106 27 154)',
+    'rgb(230 95 0)',
+    'rgb(0 146 74)',
+    'rgb(156 39 176)',
 ]);
 
 const textColor = computed(() => cssColor('--foreground', '#1f2937'));
